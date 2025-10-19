@@ -26,6 +26,12 @@ Our design approach focuses on usability, simplicity, and trust — the platform
 
 ---
 
+### Project demonstration
+
+[![SwapDoor Promo Video](https://img.youtube.com/vi/juhnkCSr0zo/0.jpg)](https://youtu.be/juhnkCSr0zo)
+
+---
+
 ### Credits
 
 **Authors:**  
@@ -34,5 +40,3 @@ Our design approach focuses on usability, simplicity, and trust — the platform
 
 **Course:** Korisnička sučelja (User Interfaces) – FESB 2025/26  
 **Mentor:** Mario Čagalj
-
----

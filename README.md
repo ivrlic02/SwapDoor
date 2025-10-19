@@ -4,6 +4,7 @@
 
 - [Project Summary](#project-summary)
 - [Project description](#project-description)
+- [Project demonstration](#project-demonstration)
 - [Credits](#credits)
 
 ---

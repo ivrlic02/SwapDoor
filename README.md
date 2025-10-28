@@ -1,43 +1,51 @@
-# SwapDoor
+# Semester Project <!-- omit in toc -->
 
-## FESB, 2025/26 – University Subject “UI”
+- [Project Structure](#project-structure)
+- [My Project Links](#my-project-links)
+  - [Semester Project](#semester-project)
+  - [Semester Assignments](#semester-assignments)
+- [Project Requirements](#project-requirements)
+  - [Web Application Requirements](#web-application-requirements)
+  - [Project Demonstration](#project-demonstration)
 
-- [Project Summary](#project-summary)
-- [Project description](#project-description)
-- [Project demonstration](#project-demonstration)
-- [Credits](#credits)
+## Project Structure
 
----
+- **`/`**: The source code of your main project
+- **`/assignments`**: Results of your semester assignments
+- **`/docs`**: If using GitHub for documentation (e.g., your final report in Markdown format)
 
-### Project Summary
+## My Project Links
 
-**Project title:** SwapDoor  
-**Problem statement:** Travelling is often expensive and impersonal — hotels cost too much and rarely feel like home.  
-**Target users:** Travelers, families, and digital nomads looking for authentic, affordable stays around the world.  
-**Proposed solution:** SwapDoor is a platform for home exchange that connects travelers who wish to swap their homes temporarily, allowing them to experience real local living instead of renting traditional accommodation.  
-**How we came up with the idea:** We wanted to design a platform that promotes cultural exchange and affordable travel. Inspired by the idea of “sharing, not spending,” SwapDoor was born as a fun and community-driven alternative to hotels and rentals.
+### Semester Project
 
----
+- Link to your production version: [**Production Version**](URL_TO_PRODUCTION_VERSION) <!-- Replace with actual URL -->
+- Link to your final report: [**Final Report**](URL_TO_FINAL_REPORT) <!-- Replace with actual URL -->
+<!-- Add more as necessary -->
 
-### Project description
+### Semester Assignments
 
-SwapDoor is a **web platform for home exchange** that allows users to connect, verify profiles, and organize mutual home swaps around the world.  
-The project was developed as part of the **UI (User Interfaces)** course at **FESB**.  
-Our design approach focuses on usability, simplicity, and trust — the platform makes it easy for users to find reliable swap partners and manage their stays.
+- Link to Assignment 1: [Idea Pitch](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Idea%20Pitch) 
+- Link to Assignment 2: [**Assignment 2**](URL_TO_ASSIGNMENT_2) <!-- Replace with actual URL -->
+- Link to Assignment 3: [**Assignment 3**](URL_TO_ASSIGNMENT_3) <!-- Replace with actual URL -->
+<!-- Add more assignments as necessary -->
 
----
+## Project Requirements
 
-### Project demonstration
+### Web Application Requirements
 
-[![SwapDoor Promo Video](https://img.youtube.com/vi/juhnkCSr0zo/0.jpg)](https://youtu.be/juhnkCSr0zo)
+- [ ] The application will be used from a web browser
+- [ ] It will be accessible on devices of different sizes
+- [ ] Users can search/filter products or services
+- [ ] The application will support user login for showing private content
+- [ ] One of the public pages will be a blog containing multiple posts with diverse content (images, videos, code snippets)
+- [ ] Part of the application's content will be stored in a remote headless CMS system
 
----
+### Project Demonstration
 
-### Credits
-
-**Authors:**  
-- Ivan Vrlić
-- Matej Vujević
-
+- [ ] Show the production version of the project or produce a video demonstrating the above requirements
+- [ ] The production version will be deployed online (on an appropriate cloud platform [Vercel](https://vercel.com), [Netlify](https://www.netlify.com/) or personal VPS)
+- [ ] Conduct usablity evaluation of your web application
+- [ ] Analyze the application's performance ([PageSpeed Insights](https://pagespeed.web.dev/))
+- [ ] The analysis results will be part of the final report
 **Course:** Korisnička sučelja (User Interfaces) – FESB 2025/26  
 **Mentor:** Mario Čagalj

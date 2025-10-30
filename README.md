@@ -25,7 +25,7 @@
 ### Semester Assignments
 
 - Link to Assignment 1: [Idea Pitch](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Idea%20Pitch) 
-- Link to Assignment 2: [**Assignment 2**](URL_TO_ASSIGNMENT_2) <!-- Replace with actual URL -->
+- Link to Assignment 2: [User personas and information architecture](https://github.com/ivrlic02/SwapDoor/blob/main/assignments/User%20personas%20and%20information%20architecture) <!-- Replace with actual URL -->
 - Link to Assignment 3: [**Assignment 3**](URL_TO_ASSIGNMENT_3) <!-- Replace with actual URL -->
 <!-- Add more assignments as necessary -->
 

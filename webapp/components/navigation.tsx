@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 type Page = {
@@ -14,23 +16,23 @@ type Page = {
 const pages: Page[] = [
   {
     title: "Explore",
-    path: "/Explore",
+    path: "/explore",
   },
   {
-    title: "How it works",
-    path: "/How_it_works",
+    title: "Swaps",
+    path: "/swaps",
   },
   {
     title: "Messages",
-    path: "/Messages",
+    path: "/messages",
   },
   {
     title: "Service",
-    path: "/Service",
+    path: "/service",
   },
   {
     title: "User Menu",
-    path: "/User_Menu",
+    path: "/user-menu",
   },
   
 ];

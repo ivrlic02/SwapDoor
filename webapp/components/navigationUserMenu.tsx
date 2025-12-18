@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 type Page = {
@@ -14,15 +16,15 @@ type Page = {
 const pages: Page[] = [
   {
     title: "Account Settings",
-    path: "/User_Menu/AccountSettings",
+    path: "/user-menu/account-settings",
   },
   {
     title: "Dashboard",
-    path: "/User_Menu/Dashboard",
+    path: "/user-menu/dashboard",
   },
    {
     title: "My Profile",
-    path: "/User_Menu/MyProfile",
+    path: "/user-menu/my-profile",
   },
   
 ];

@@ -1,4 +1,4 @@
-# **Assignment 3 – Low/High-Fidelity Prototyping: SwapDoor**
+# **Assignment 4 – Low/High-Fidelity Prototyping: SwapDoor**
 
 ## **Contents**
 - [Assignment Overview](#assignment-overview)

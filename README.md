@@ -27,6 +27,8 @@
 - Link to Assignment 1: [**Idea Pitch**](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Idea%20Pitch) 
 - Link to Assignment 2: [**User personas and information architecture**](https://github.com/ivrlic02/SwapDoor/blob/main/assignments/User%20personas%20and%20information%20architecture) <!-- Replace with actual URL -->
 - Link to Assignment 3: [**Next.js - Deploying Application**](https://swap-door.vercel.app/Explore) <!-- Replace with actual URL -->
+- Link to Assignment 4: [**Low/High-fidelity prototype**](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Low%20High-fidelity%20prototype)
+- Link to Assignment 5: 
 <!-- Add more assignments as necessary -->
 
 ## Project Requirements

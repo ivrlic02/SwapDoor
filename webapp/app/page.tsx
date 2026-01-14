@@ -1,10 +1,21 @@
-import {Navigation} from "@/components/navigation";
+import { Navigation } from "@/components/navigation";
+import { Hero } from "@/components/hero";
+import { Trending } from "@/components/trending";
+import { HowItWorks } from "@/components/how-it-works";
+import { Stats } from "@/components/stats";
+import { CTA } from "@/components/cta";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center p-10">
+    <main className="bg-[#0f1115] text-white">
       <Navigation />
-      <h1 className="text-6xl font-extrabold tracking-tight">Home page</h1>
+      <Hero />
+      <Trending />
+      <HowItWorks />
+      <Stats />
+      <CTA />
+      <Footer />
     </main>
   );
 }

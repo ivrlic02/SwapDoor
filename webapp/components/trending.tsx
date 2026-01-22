@@ -10,7 +10,7 @@ type House = {
 
 async function fetchHouses(): Promise<House[]> {
   const res = await fetch(
-    "https://mocki.io/v1/13d0cd32-ea90-46a2-81fd-16e78d5707fe",
+    "https://gist.githubusercontent.com/ivrlic02/bd1d69cb1921220a341a099770b952cf/raw/6103bd76c57779026487390bc0712724d35f6903/data.json",
     { cache: "no-store" }
   );
   const data = await res.json();

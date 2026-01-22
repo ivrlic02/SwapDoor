@@ -23,7 +23,7 @@ async function fetchHouseById(id: string): Promise<House> {
   if (isNaN(numericId)) notFound();
 
   const res = await fetch(
-    "https://mocki.io/v1/13d0cd32-ea90-46a2-81fd-16e78d5707fe",
+    "https://gist.githubusercontent.com/ivrlic02/bd1d69cb1921220a341a099770b952cf/raw/6103bd76c57779026487390bc0712724d35f6903/data.json",
     { cache: "no-store" }
   );
   if (!res.ok) notFound();
@@ -44,10 +44,10 @@ export default async function SwapDetailsPage({
   const house = await fetchHouseById(id);
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-10">
+    <main className="bg-[#0f1115] min-h-screen text-white">
       <Navigation />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-6 py-20">
         <h1 className="text-5xl font-bold mb-6">{house.name}</h1>
 
         <img

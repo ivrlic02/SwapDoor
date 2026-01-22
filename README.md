@@ -28,7 +28,8 @@
 - Link to Assignment 2: [**User personas and information architecture**](https://github.com/ivrlic02/SwapDoor/blob/main/assignments/User%20personas%20and%20information%20architecture) <!-- Replace with actual URL -->
 - Link to Assignment 3: [**Next.js - Deploying Application**](https://swap-door.vercel.app/) <!-- Replace with actual URL -->
 - Link to Assignment 4: [**Low/High-fidelity prototype**](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Low%20High-fidelity%20prototype)
-- Link to Assignment 5: [**Next.js - Dynamic routes, data fetching**](https://swap-door.vercel.app/swaps)
+- Link to Assignment 5: [**Next.js - Dynamic routes, data fetching**](https://swap-door.vercel.app/explore)
+- Link to Assignment 6: [**Full Responsive Page Coding**](https://swap-door.vercel.app)
 <!-- Add more assignments as necessary -->
 
 ## Project Requirements

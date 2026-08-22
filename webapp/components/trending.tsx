@@ -1,53 +1,37 @@
 import Link from "next/link";
+import type { House } from "@/lib/houses";
+import { HouseCard } from "@/components/house-card";
 
-type House = {
-  id: number;
-  name: string;
-  image: string;
-  location: string;
-  country: string;
-};
-
-async function fetchHouses(): Promise<House[]> {
-  const res = await fetch(
-    "https://gist.githubusercontent.com/ivrlic02/bd1d69cb1921220a341a099770b952cf/raw/6103bd76c57779026487390bc0712724d35f6903/data.json",
-    { cache: "no-store" }
-  );
-  const data = await res.json();
-  return data.houses.slice(0, 3);
-}
-
-export async function Trending() {
-  const houses = await fetchHouses();
+export function Trending({ houses }: { houses: House[] }) {
+  const top = houses.slice(0, 3);
 
   return (
     <section className="px-6 py-20">
-      <h2 className="text-center text-3xl font-bold mb-10">
-        Trending Now
-      </h2>
-
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3 max-w-6xl mx-auto">
-        {houses.map((house) => (
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 flex items-end justify-between gap-4">
+          <div>
+            <p className="mb-2 font-semibold text-accent">Popular right now</p>
+            <h2 className="text-3xl font-bold">Trending homes</h2>
+          </div>
           <Link
-            key={house.id}
-            href={`/explore/${house.id}`}
-            className="bg-[#1a1d23] rounded-xl overflow-hidden"
+            href="/explore"
+            className="hidden shrink-0 text-accent transition hover:text-fg sm:inline"
           >
-            <img src={house.image} className="h-48 w-full object-cover" />
-            <div className="p-4">
-              <h3>{house.name}</h3>
-              <p className="text-sm text-gray-400">
-                {house.location}, {house.country}
-              </p>
-            </div>
+            View all homes →
           </Link>
-        ))}
-      </div>
+        </div>
 
-      <div className="text-center mt-10">
-        <Link href="/explore" className="text-blue-500">
-          View All Homes →
-        </Link>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {top.map((house, i) => (
+            <HouseCard key={house.id} house={house} priority={i === 0} />
+          ))}
+        </div>
+
+        <div className="mt-10 text-center sm:hidden">
+          <Link href="/explore" className="text-accent transition hover:text-fg">
+            View all homes →
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -1,26 +1,487 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  SwapDoor design tokens — single source of truth for color.
+  Theme: soft ("lighter") dark, blue-monochrome accents that follow the logo
+  (dark-blue wordmark + light-blue door). Change a value here and it updates
+  everywhere; components never use raw hex.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  Role split (60-30-10):
+    bg          ~60%  page background (soft dark slate, not near-black)
+    surface     ~30%  cards, nav, inputs, elevated panels
+    brand/accent ~10% CTAs, links, highlights (blue, from the icon)
+*/
+@theme {
+  /* One extra breakpoint above 2xl, for wide desktops. Registered here rather
+     than written as an arbitrary `min-[1800px]:` variant so Tailwind sorts it
+     *after* 2xl — an arbitrary variant loses the cascade to 2xl when both match. */
+  --breakpoint-3xl: 112.5rem;   /* 1800px */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: #1a2030;          /* page background — lighter dark slate */
+  --color-surface: #232b3e;     /* cards, nav, inputs */
+  --color-surface-2: #1e2536;   /* alternating section background */
+  --color-border: #33405a;      /* hairlines, outlines */
+
+  /* One step ABOVE `surface`, for the controls that must read as sitting on top
+     of the page rather than in it — today that is the search bar in the hero and
+     in the docked nav pill. `surface` on `bg` is only 1.35:1 of luminance, so the
+     site's primary control was very nearly the same value as its background and
+     rested entirely on a hairline to be seen at all; this raises it to 1.56:1
+     (Lecture 5: contrasted elements must be *very* different). `border` is too
+     close to this tone to stay visible on it, hence the matching raised border. */
+  --color-surface-raised: #333f5e;
+  --color-border-raised: #4c5b7e;
+
+  --color-fg: #eef2f9;          /* primary text — high contrast */
+  --color-muted: #a9b4c7;       /* secondary text — passes AA on bg */
+
+  --color-brand: #3b82f6;       /* primary blue — buttons, links, active */
+  --color-brand-hover: #2f6fe0; /* brand hover */
+  --color-accent: #63b3ed;      /* light "door" blue — eyebrows, stats, highlights */
+
+  --color-success: #34c77b;     /* verified / positive status */
+  --color-danger: #f05252;      /* errors / destructive */
+  --color-selected: #f59e0b;    /* selected map pin — amber; blue↔orange is the
+                                   colour-blind-safe high-contrast pair (L6) */
+  --color-doorlight: #ffd9a0;   /* the pale end of the light behind an open door
+                                   (.door-mark). Deliberately a tint of
+                                   `selected` rather than a new hue: the palette
+                                   is blue-monochrome and already spends its one
+                                   sanctioned exception on amber, so the warm
+                                   glow costs nothing it hasn't already paid */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* In-page anchors glide rather than jump — the footer's "Back to top" (#top on
+   <body>) and /profile#account are the two that exist today.
+   Written as `no-preference` rather than as a rule plus a reduced-motion
+   override, so the default for anyone who has asked their OS to stop moving
+   things is simply never to opt in. Route changes are unaffected: <html> carries
+   `data-scroll-behavior="smooth"`, which is what tells Next 16 to force `auto`
+   for the duration of a navigation. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Leaflet map: dark container that matches the dark CARTO ("Dark Matter")
+   tiles, so there's no bright flash beyond/while the tiles load. */
+.leaflet-container {
+  background: var(--color-surface-2);
+}
+
+/* Home-map pins — tokenised fill. A selected/searched pin recolours (amber,
+   colour-blind-safe against the blue default) and springs in. The animation
+   lives on the inner <svg> so it never fights Leaflet's positioning transform
+   on the marker element. Colour is paired with size + motion so meaning is not
+   carried by colour alone (L6). */
+.swapdoor-pin svg {
+  fill: var(--color-brand);
+}
+.swapdoor-pin--selected svg {
+  fill: var(--color-selected);
+  transform-origin: 50% 100%;
+  animation: swapdoor-pin-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes swapdoor-pin-bounce {
+  0% {
+    transform: translateY(-8px) scale(0.8);
+  }
+  60% {
+    transform: translateY(0) scale(1.12);
+  }
+  80% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swapdoor-pin--selected svg {
+    animation: none;
+  }
+}
+
+/* Hero globe (components/globe.tsx) — sized to exactly fill the right gutter
+   beside the headline and stop short of it, so the decoration can grow with the
+   viewport without ever crowding the text (aesthetic & minimalist).
+
+   The headline is a fixed 864px at md+, so the gutter each side is
+   (viewport − 864) / 2. The 891 below is that 864, plus ~15px because 100vw
+   counts the scrollbar and the layout does not, plus 12px for a 6px gap at
+   each end — one of which is the `right-1.5` the globe is pinned with. Capped
+   at 520px so it stays a flourish on ultra-wide screens instead of becoming
+   the page. Measured in the browser, that lands it at 60.5px at 1024, 188.5px
+   at 1280, 316.5px at 1536 and 508.5px at 1920 — up to 1.8× the decoration it
+   replaced — with exactly 6px of clearance to the headline at every one of
+   them. Motion, and the pause when it scrolls out of view, are handled inside
+   the component. */
+.hero-globe {
+  /* clamped at 0 so the expression can't go negative (and be thrown away as an
+     invalid width) on the narrow viewports where the globe is hidden anyway. */
+  width: clamp(0px, calc((100vw - 891px) / 2 - 0.375rem), 520px);
+}
+
+/* The mascot mirrors the globe in the left gutter, on the same arithmetic, so
+   the two decorations grow and shrink together and the hero stays symmetric.
+   Capped lower than the globe (400 vs 520) because the artwork is portrait at
+   917×1181 — 400px of width is already ~515px of height, which is as much of
+   the 76vh section as a decoration should occupy.
+
+   It is CENTRED in its gutter rather than pinned to the viewport edge. Pinning
+   was only correct while the width filled the gutter exactly; once the 400px cap
+   starts biting — anywhere above ~1700px — the leftover slack all piled up on
+   the headline side, so on a wide screen the art sat jammed against the window
+   edge with a gap beside the text. Centring spends that slack evenly, which
+   moves the mascot right by ~52px at 1920 and, correctly, by almost nothing at
+   1536 and below, where the cap is not reached and there is no slack to spend. */
+.hero-mascot {
+  --hero-gutter: max(0px, calc((100vw - 891px) / 2));
+  --hero-mascot-w: clamp(0px, calc(var(--hero-gutter) - 0.375rem), 400px);
+
+  width: var(--hero-mascot-w);
+  left: calc((var(--hero-gutter) - var(--hero-mascot-w)) / 2);
+}
+
+/* Account menu opening from the navbar avatar. Short and slightly scaled from
+   the top-right corner so the panel visibly *comes from* its trigger rather
+   than appearing out of nowhere (visibility of system status, #1). */
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+/* Budget range slider — a thicker track and a large (22px) thumb make it an
+   easy target (Fitts' law) for every persona, including the low-tech Empty
+   Nesters, instead of the thin native default. Tokenised brand thumb with a
+   surface-coloured ring so it reads clearly on the panel. */
+input.range-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  /* WebKit fill: the input's own background is set inline to a brand→border
+     gradient at the current value, so the "played" part of the line is blue. */
+  background: var(--color-border);
+  outline: none;
+}
+/* Firefox fills the line natively: brand up to the thumb, border after it. */
+input.range-brand::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-border);
+}
+input.range-brand::-moz-range-progress {
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+}
+input.range-brand::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  cursor: pointer;
+}
+input.range-brand::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  cursor: pointer;
+}
+input.range-brand:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+input.range-brand:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Skeleton placeholders (Instagram/Facebook-style) — shown while data/images
+   load so the page shows its structure instantly instead of a blank/jumpy
+   screen (Nielsen #3 visibility of system status; reduces *perceived* wait).
+   A soft light sweep travels across a surface-coloured block. Tokenised, and
+   disabled for reduced-motion users (a static tint remains). */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-border) 55%, transparent),
+    transparent
+  );
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* Top navigation progress bar — a thin brand-blue bar that creeps forward on
+   route change and completes when the new page paints (YouTube/GitHub style),
+   giving feedback for the >1s navigations (Nielsen response-time limits). */
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  z-index: 100;
+  background: var(--color-brand);
+  box-shadow: 0 0 10px var(--color-brand), 0 0 4px var(--color-accent);
+  border-radius: 0 3px 3px 0;
+  transition: width 0.2s ease, opacity 0.3s ease 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-progress {
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* Date sheet on the listing page (phones). It rises from the bottom edge it is
+   anchored to, so the movement itself says where the panel came from and where
+   the Done button will send it back to (visibility of system status, #3). */
+.swap-sheet {
+  animation: swap-sheet-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes swap-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swap-sheet {
+    animation: none;
+  }
+}
+
+/* Reviews marquee (components/reviews-marquee.tsx) — two rows of real guest
+   reviews drifting in opposite directions. The point is the *aggregate*: a
+   single testimonial reads as one cherry-picked quote, a moving wall of them
+   reads as a population, which is what the two cautious personas are actually
+   weighing (Overview §3). Opposite directions also stop the two rows from
+   scanning as one block of sliding text.
+
+   Each track holds the same list twice, so translating it exactly -50% lands
+   copy 2 where copy 1 started and the loop is seamless. The duplicate is
+   aria-hidden — screen readers get the reviews once, in the DOM, unmoved.
+
+   Motion is the decoration here, never the carrier of information: everything
+   is readable while paused, and the pause is offered three ways — hover, focus
+   inside (so a keyboard user tabbing to a review's link stops the row), and
+   reduced-motion, which drops the animation entirely and hands the row back to
+   the user as an ordinary horizontal scroller. */
+.rv-marquee {
+  /* Fade both ends so cards enter and leave instead of being cut by an edge. */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 5rem,
+    #000 calc(100% - 5rem),
+    transparent 100%
+  );
+}
+
+.rv-track {
+  display: flex;
+  width: max-content;
+  animation: rv-scroll var(--rv-duration, 64s) linear infinite;
+}
+
+/* Row two runs the other way. `reverse` rather than a second keyframe set so
+   both rows share one animation and can never drift out of step. */
+.rv-track--reverse {
+  animation-direction: reverse;
+}
+
+.rv-marquee:hover .rv-track,
+.rv-marquee:focus-within .rv-track {
+  animation-play-state: paused;
+}
+
+@keyframes rv-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-track {
+    animation: none;
+  }
+  /* Nothing is looping any more, so the seamless-loop copy would just read as
+     the same reviews printed twice. */
+  .rv-track > [data-rv-dup] {
+    display: none;
+  }
+  .rv-marquee {
+    overflow-x: auto;
+    mask-image: none;
+  }
+}
+
+/* The navbar's home mark (components/brand.tsx → <DoorMark>).
+   ────────────────────────────────────────────────────────────────────────────
+   At rest: a closed door, drawn from the logo's own two blues. On hover or
+   keyboard focus of the link around it, the door swings open on its hinge,
+   warm light fills the opening, and the mascot walks out and stands beside the
+   frame — the logo's story, told in the time a pointer rests on a link.
+
+   Why it earns its place: the mark IS the home link and never said so. A logo
+   that answers the pointer is a logo that admits it is clickable — feedforward,
+   in the Lecture 2 sense — and it does not replace the label or `aria-current`
+   the link also carries, because a state signalled by motion alone is no state
+   at all for a reduced-motion user.
+
+   Geometry is expressed entirely as fractions of `--dm` (the mark's height, set
+   inline by the component), so one component is correct at 16px and at 120px.
+   Timing borrows the curve the docked search pill already uses, so a new moving
+   thing in the header reads as part of the same system (CRAP repetition). */
+.door-mark {
+  --dm-door-w: calc(var(--dm) * 0.7);
+  --dm-border: max(1px, calc(var(--dm) * 0.075));
+  --dm-radius: calc(var(--dm) * 0.11);
+  --dm-time: 380ms;
+  --dm-ease: cubic-bezier(0.76, 0, 0.24, 1);
+
+  position: relative;
+  display: inline-block;
+  flex: none;
+  /* Wider than the door itself: the extra tenth is where he stands once he is
+     out. Fixed, so the wordmark beside it never shifts by a pixel. */
+  height: var(--dm);
+  width: calc(var(--dm) * 1.1);
+  vertical-align: middle;
+}
+
+.door-mark__view,
+.door-mark__jamb,
+.door-mark__hinge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dm-door-w);
+  height: 100%;
+}
+
+/* The doorway holds the light and the mascot. It must NOT clip: he leaves it. */
+.door-mark__view {
+  overflow: visible;
+}
+
+.door-mark__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--dm-radius);
+  background: linear-gradient(170deg, var(--color-doorlight), var(--color-selected));
+  /* The bloom is the light spilling past the frame onto the header. It fades in
+     with the panel because it shares the element's opacity. */
+  box-shadow: 0 0 calc(var(--dm) * 0.6) calc(var(--dm) * 0.05)
+    color-mix(in srgb, var(--color-selected) 38%, transparent);
+  opacity: 0;
+  transition: opacity var(--dm-time) var(--dm-ease);
+}
+
+.door-mark__jamb {
+  border: var(--dm-border) solid var(--color-brand);
+  border-radius: var(--dm-radius);
+}
+
+/* A shallow perspective would magnify the leading edge as it swings toward the
+   viewer; at 5× the mark's height the door opens without ballooning. */
+.door-mark__hinge {
+  perspective: calc(var(--dm) * 5);
+}
+
+.door-mark__panel {
+  position: absolute;
+  inset: var(--dm-border);
+  border-radius: calc(var(--dm-radius) * 0.6);
+  background: var(--color-accent);
+  transform-origin: left center;
+  transition: transform var(--dm-time) var(--dm-ease), filter var(--dm-time) var(--dm-ease);
+}
+
+.door-mark__knob {
+  position: absolute;
+  right: 16%;
+  top: 50%;
+  width: calc(var(--dm) * 0.1);
+  height: calc(var(--dm) * 0.1);
+  margin-top: calc(var(--dm) * -0.05);
+  border-radius: 9999px;
+  background: var(--color-bg);
+}
+
+.door-mark__sq {
+  position: absolute;
+  bottom: calc(var(--dm) * 0.04);
+  left: calc(var(--dm-door-w) * 0.16);
+  height: calc(var(--dm) * 0.66);
+  width: auto;
+  fill: var(--color-brand);
+  opacity: 0;
+  transform: translateX(calc(var(--dm) * -0.14));
+  transition: opacity var(--dm-time) var(--dm-ease), transform var(--dm-time) var(--dm-ease);
+}
+
+/* Open. `:focus-visible` is listed beside `:hover` so a keyboard user gets the
+   same feedback a pointer user does, and only when focus is actually visible —
+   the mark does not flash every time a click lands on the link. */
+.doormark-trigger:hover .door-mark__panel,
+.doormark-trigger:focus-visible .door-mark__panel {
+  transform: rotateY(-70deg);
+  filter: brightness(0.78);
+}
+
+.doormark-trigger:hover .door-mark__glow,
+.doormark-trigger:focus-visible .door-mark__glow {
+  opacity: 1;
+}
+
+.doormark-trigger:hover .door-mark__sq,
+.doormark-trigger:focus-visible .door-mark__sq {
+  opacity: 1;
+  transform: translateX(calc(var(--dm) * 0.34));
+}
+
+/* The door still opens — it just stops travelling. Removing the state entirely
+   would cost these users the feedforward the whole thing exists for. */
+@media (prefers-reduced-motion: reduce) {
+  .door-mark__panel,
+  .door-mark__glow,
+  .door-mark__sq {
+    transition-duration: 1ms;
+  }
 }

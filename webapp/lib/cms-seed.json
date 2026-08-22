@@ -1,0 +1,433 @@
+{
+  "_comment": "Initial CMS content, and the app-level fallback. ONE source of truth: lib/cms-defaults.ts imports this file so the site still renders when Supabase is unconfigured or a query fails (same discipline as the gist fallback in lib/houses.ts), and scripts/build-cms-seed.mjs turns the same file into supabase/seed-cms.sql. Edit content here only to change the SEED; once a row exists in Supabase, the database is what the site shows and the admin at /admin is where you edit it.",
+
+  "posts": [
+    {
+      "slug": "why-home-swapping",
+      "title": "5 Reasons to Try Home Swapping",
+      "excerpt": "Skip the impersonal hotel and live like a local. Here is why swapping homes is the most authentic — and most affordable — way to travel.",
+      "cover": "https://images.unsplash.com/photo-1501183638710-841dd1904471",
+      "category": "travel",
+      "author": "The SwapDoor Team",
+      "date": "2026-07-28",
+      "status": "published",
+      "content": [
+        {
+          "type": "paragraph",
+          "text": "Travel is supposed to feel like an adventure, not a transaction. Yet hotels are expensive, cramped, and strangely anonymous — the same beige room in every city. Home swapping flips that on its head: you stay in a real home, in a real neighbourhood, and you travel for a fraction of the cost."
+        },
+        {
+          "type": "video",
+          "provider": "youtube",
+          "id": "juhnkCSr0zo",
+          "title": "SwapDoor — the idea in ninety seconds",
+          "caption": "The pitch that started SwapDoor: sharing, not spending."
+        },
+        { "type": "heading", "text": "1. Accommodation stops being a line item" },
+        {
+          "type": "paragraph",
+          "text": "Because you are exchanging homes rather than paying nightly rates, the single biggest cost of any trip effectively drops to zero. Two weeks that would have gone on a hotel bill go on the trip itself instead — trains, food, the things you actually remember."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Do the maths on your own trip",
+          "text": "Take the nightly rate you would have paid and multiply it by the nights you are away. That number is what a swap is worth to you — and it is usually the moment people stop thinking of this as a curiosity."
+        },
+        {
+          "type": "image",
+          "src": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
+          "alt": "A bright, welcoming living room with large windows",
+          "caption": "A real home comes with a kitchen, a desk, and room to breathe."
+        },
+        { "type": "heading", "text": "2. You live like a local, not beside one" },
+        {
+          "type": "paragraph",
+          "text": "Swappers wake up on residential streets, shop at the corner market, and get honest recommendations from the person whose home it is. You experience a city the way the people who live there do — which is the part a hotel cannot sell you at any price."
+        },
+        { "type": "heading", "text": "3. Space, and the things families actually need" },
+        {
+          "type": "paragraph",
+          "text": "Full kitchens, laundry, separate bedrooms, somewhere for the kids to be loud. It is a genuine home away from home rather than a room with a mini-fridge, and for anyone travelling longer than a weekend that difference compounds every single day."
+        },
+        { "type": "heading", "text": "4. Trust is built into the shape of the deal" },
+        {
+          "type": "paragraph",
+          "text": "A swap is mutual by design: your partner is staying in your home while you stay in theirs. That symmetry does more work than any policy document — both sides have exactly the same thing at stake, at exactly the same time."
+        },
+        { "type": "heading", "text": "5. You travel more often" },
+        {
+          "type": "paragraph",
+          "text": "When the biggest cost of travel disappears, a long weekend or a month abroad suddenly sits inside the budget. Members find themselves saying yes to trips they would otherwise have quietly skipped."
+        },
+        {
+          "type": "listing",
+          "houseId": 6,
+          "note": "A machiya in Kyoto — the kind of home you cannot book, only swap into."
+        }
+      ]
+    },
+
+    {
+      "slug": "prepare-your-home",
+      "title": "How to Prepare Your Home for a Swap",
+      "excerpt": "A great swap starts before you leave. A simple checklist to make your home welcoming, safe, and genuinely ready for your guests.",
+      "cover": "https://images.unsplash.com/photo-1484154218962-a197022b5858",
+      "category": "hosting",
+      "author": "Sarah Miller",
+      "date": "2026-08-04",
+      "status": "published",
+      "content": [
+        {
+          "type": "paragraph",
+          "text": "Hosting a swap partner is a lot like having friends stay over — a little preparation goes a long way. The goal is simple: leave your home the way you would love to find someone else."
+        },
+        {
+          "type": "quote",
+          "text": "The first swap I hosted, I spent a whole Saturday cleaning and forgot to write down the Wi-Fi password. Guess which one they messaged me about.",
+          "attribution": "Sarah Miller, host in Minneapolis"
+        },
+        { "type": "heading", "text": "Declutter, and make actual space" },
+        {
+          "type": "paragraph",
+          "text": "Clear a shelf in the closet, empty a couple of drawers, free up a shelf in the fridge. Guests need somewhere to put their things before a house starts to feel like theirs — living out of a suitcase in someone else home is the fastest way to feel like an intruder."
+        },
+        {
+          "type": "image",
+          "src": "https://images.unsplash.com/photo-1556911220-bff31c812dba",
+          "alt": "A clean, tidy kitchen counter ready for guests",
+          "caption": "A clean kitchen is the single most-mentioned detail in reviews."
+        },
+        { "type": "heading", "text": "Write the one page that prevents twelve messages" },
+        {
+          "type": "paragraph",
+          "text": "A house guide takes twenty minutes and saves both of you a week of small questions. Print it, leave it on the counter, and send a copy in the chat before they travel."
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Wi-Fi network name and password, written exactly as it is typed",
+            "How the heating, hot water and oven actually work",
+            "Bin and recycling days, and where the bins live",
+            "Which windows and doors need the trick, and what the trick is",
+            "Four or five places you would send a friend — not the tourist list",
+            "A phone number for you, and one for someone local"
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "warning",
+          "title": "Agree on pets and plants in writing",
+          "text": "Watering a fern is a favour; a cat with medication is a commitment. Whatever the arrangement is, put it in the swap conversation before anyone books a flight, so both sides are agreeing to the same thing."
+        },
+        { "type": "heading", "text": "Handle the essentials" },
+        {
+          "type": "paragraph",
+          "text": "Fresh sheets and towels, a smoke alarm that has been tested this year, and a spare-key plan that does not depend on a neighbour being home at the right hour. These are unglamorous and they are what reviews are quietly made of."
+        },
+        {
+          "type": "gallery",
+          "images": [
+            {
+              "src": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
+              "alt": "Living room prepared for guests with clear surfaces"
+            },
+            {
+              "src": "https://images.unsplash.com/photo-1556911220-bff31c812dba",
+              "alt": "Kitchen counter cleared and wiped down"
+            }
+          ],
+          "caption": "Before and after: the same rooms, with the personal clutter put away."
+        },
+        { "type": "heading", "text": "Put the personal things away" },
+        {
+          "type": "paragraph",
+          "text": "Lock away documents, valuables and anything sentimental. This is not distrust — it is the same thing you would do before any houseguest, and it lets you relax while you are away, which is the entire point of the trip."
+        }
+      ]
+    },
+
+    {
+      "slug": "trust-and-safety",
+      "title": "Trust and Safety: Swapping with Confidence",
+      "excerpt": "What the Verified badge actually means, how reviews are earned, and why the safest swap is the one you talked through first.",
+      "cover": "https://images.unsplash.com/photo-1521791136064-7986c2920216",
+      "category": "trust",
+      "author": "The SwapDoor Team",
+      "date": "2026-08-11",
+      "status": "published",
+      "content": [
+        {
+          "type": "paragraph",
+          "text": "Letting someone stay in your home — and staying in theirs — only works if both sides feel safe. Trust is not a feature we bolted on at the end; it is the product. So it is worth being precise about what our signals mean, and what they do not."
+        },
+        { "type": "heading", "text": "What the Verified badge is" },
+        {
+          "type": "paragraph",
+          "text": "A ✓ Verified badge is a **reputation** signal, earned over time. It is not an identity check: we do not inspect anyone documents. A host earns it by being here long enough to have a record, and by having that record be good."
+        },
+        {
+          "type": "paragraph",
+          "text": "Because the rule lives in the database rather than in the interface, no page can decide to show the badge on its own — every home inherits it from the person offering it:"
+        },
+        {
+          "type": "code",
+          "language": "sql",
+          "code": "-- supabase/trust.sql — the whole definition of the badge\ncreate or replace function public.is_verified_host(p public.profiles)\nreturns boolean\nlanguage sql\nstable\nas $$\n  select\n    p.created_at < now() - interval '90 days'   -- a real history\n    and p.bio is not null                       -- a profile worth reading\n    and p.location is not null\n    and public.host_review_count(p) >= 3         -- at least three swaps\n    and public.host_rating(p) >= 4.5;            -- that went well\n$$;",
+          "caption": "One function, exposed to the app as a computed column. Change the rule here and every badge on the site changes with it."
+        },
+        {
+          "type": "callout",
+          "tone": "note",
+          "title": "A new member has no badge, and that is correct",
+          "text": "Most people you meet here will not be verified yet, because they have not had three swaps. That is information, not a warning — read the profile, read the reviews, and have the conversation."
+        },
+        {
+          "type": "image",
+          "src": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf",
+          "alt": "Two people shaking hands over a table",
+          "caption": "Reviews from real swaps build a reputation that outlives any single trip."
+        },
+        { "type": "heading", "text": "Reviews come from swaps, not from strangers" },
+        {
+          "type": "paragraph",
+          "text": "You can only review a home you actually swapped into, you cannot review your own listing, and you cannot review the same home twice. Those three rules are enforced by the database, not by the form — so the rating on a card is a record of what happened, not of who felt strongly enough to type."
+        },
+        { "type": "heading", "text": "Talk before you commit" },
+        {
+          "type": "paragraph",
+          "text": "Every swap request opens a private thread between exactly two people. Use it. Ask about the neighbourhood at night, the stairs, the neighbours, the parking. A ten-minute conversation is the best safety feature on this site, and it is free."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Three questions worth asking every time",
+          "text": "What would you want a guest to know that is not in the listing? What is the one thing about the flat that annoys you? And: what time do you actually need us out on the last day?"
+        }
+      ]
+    },
+
+    {
+      "slug": "kyoto-neighborhood-guide",
+      "title": "A Neighbourhood Guide to Kyoto",
+      "excerpt": "Where to stay, what to skip, and the ordinary streets worth walking — from a host who has lived here his whole life.",
+      "cover": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65",
+      "category": "guides",
+      "author": "Kenji Tanaka",
+      "date": "2026-08-15",
+      "status": "published",
+      "content": [
+        {
+          "type": "paragraph",
+          "text": "Most visitors see Kyoto in three days and remember queues. The city rewards the opposite approach: pick one neighbourhood, stay in it, and let the famous things be a morning walk rather than an itinerary. Here is how I would spend two weeks if I were arriving for the first time."
+        },
+        { "type": "heading", "text": "Stay north, not central" },
+        {
+          "type": "paragraph",
+          "text": "Central Kyoto is convenient and forgettable. The northern neighbourhoods — around Nishijin and Demachiyanagi — are where the machiya townhouses still stand, where the bakeries have queues of locals rather than tour groups, and where the river is a place people sit rather than photograph."
+        },
+        {
+          "type": "gallery",
+          "images": [
+            {
+              "src": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65",
+              "alt": "A quiet Kyoto street of wooden machiya townhouses"
+            },
+            {
+              "src": "https://images.unsplash.com/photo-1523217582562-09d0def993a6",
+              "alt": "Warm evening light on an old residential street"
+            }
+          ],
+          "caption": "Nishijin in the evening — ten minutes by bike from the temples, and completely quiet."
+        },
+        { "type": "heading", "text": "A week that is actually pleasant" },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "Day one: do nothing. Walk your own street, find your konbini, buy a bike.",
+            "Fushimi Inari at 6am — genuinely empty, and cool enough to climb.",
+            "Nishiki market before eleven, then never again at any other hour.",
+            "One long afternoon on the Kamo river with something cold.",
+            "The Philosopher path on a weekday, from the north end, downhill.",
+            "A day trip to Nara, leaving before eight.",
+            "Another day doing nothing. This is the one people skip and regret."
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Get a bicycle on the first morning",
+          "text": "Kyoto is flat, small, and hostile to cars. A bike turns a forty-minute bus ride into a twelve-minute ride past things worth seeing, and most hosts here — mine included — leave one for guests."
+        },
+        {
+          "type": "paragraph",
+          "text": "The house I offer is a restored machiya with a small courtyard garden, two streets from a bakery I have been going to for thirty years. If you swap into it, the bakery is the first thing I will tell you about."
+        },
+        {
+          "type": "listing",
+          "houseId": 6,
+          "note": "My own home — the one this guide is written from."
+        }
+      ]
+    },
+
+    {
+      "slug": "working-from-a-swap",
+      "title": "Working From Someone Else Kitchen Table",
+      "excerpt": "Three years of remote work from swapped homes: what to check before you say yes, and the one question that saves the whole trip.",
+      "cover": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6",
+      "category": "travel",
+      "author": "Alex Chen",
+      "date": "2026-08-19",
+      "status": "published",
+      "content": [
+        {
+          "type": "paragraph",
+          "text": "I have worked from eleven swapped homes across four countries. The trips that went well and the trips that went badly did not differ by city, price or view. They differed by whether I asked three boring questions before I agreed to anything."
+        },
+        { "type": "heading", "text": "Question one: what is the actual upload speed?" },
+        {
+          "type": "paragraph",
+          "text": "Not the advertised speed. The measured one, from the room you will be sitting in, at the hour you will be working. Advertised fibre means nothing if the router is three concrete walls away from the only desk."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Ask for a screenshot, not an adjective",
+          "text": "The message I now send every host: could you run a speed test from wherever I would work, and send the screenshot? Nobody has ever been offended, and twice it has saved me a very bad fortnight."
+        },
+        { "type": "heading", "text": "Question two: is there a desk, or is there a table?" },
+        {
+          "type": "paragraph",
+          "text": "A kitchen table is fine for four days and ruinous for four weeks. If you are staying a month, a real chair matters more than the neighbourhood does — a fact I learned the expensive way in an otherwise perfect flat in Lisbon."
+        },
+        {
+          "type": "listing",
+          "houseId": 4,
+          "note": "Ubud — the one that had a real desk, and the reason I stayed six weeks."
+        },
+        { "type": "heading", "text": "Question three: what happens at 9am local time?" },
+        {
+          "type": "paragraph",
+          "text": "Building works, school runs, a café that puts its chairs out under your window. Time zones are the obvious problem and the solvable one; noise at the hour you take calls is neither."
+        },
+        {
+          "type": "paragraph",
+          "text": "For what it is worth, I keep the whole thing in a note and paste it into every new swap thread. It is not elegant, but the checklist has never let me down:"
+        },
+        {
+          "type": "code",
+          "language": "ts",
+          "code": "// The three things I ask before agreeing to any swap longer than a week.\nconst checklist = [\n  \"Speed test screenshot, taken from the work spot\",\n  \"Photo of the desk and the chair, not the living room\",\n  \"What the street sounds like on a weekday morning\",\n] as const;\n\n// Everything else — the view, the kitchen, the neighbourhood — is negotiable.\n// These three are not, because none of them can be fixed once you arrive.\nexport function readyToCommit(answers: string[]): boolean {\n  return checklist.every((_, i) => Boolean(answers[i]?.trim()));\n}",
+          "caption": "Pasted into every swap thread. Hosts have universally been happy to answer."
+        },
+        {
+          "type": "quote",
+          "text": "The best swap I ever did was a plain flat with a bad view, a fast connection and a chair that did not hurt. I extended it twice.",
+          "attribution": "Alex Chen, Berlin"
+        }
+      ]
+    }
+  ],
+
+  "howItWorks": {
+    "intro": {
+      "eyebrow": "How it works",
+      "title": "Swapping homes, made simple",
+      "subtitle": "Four steps from browsing to keys in hand. No booking fees, no nightly rates — just two people who each need somewhere to stay."
+    },
+    "steps": [
+      {
+        "key": "browse",
+        "title": "Find somewhere you would actually stay",
+        "body": "Search by destination, dates and guests, then narrow by the things that decide it — home type, workspace, whether it takes a family. Every result is a real listing offered by a real member, and the map moves with your filters so you can see the neighbourhood before you see the photos.",
+        "panel": "listings",
+        "ctaLabel": "Browse homes",
+        "ctaHref": "/explore"
+      },
+      {
+        "key": "ask",
+        "title": "Ask, before anyone commits to anything",
+        "body": "Send a swap request with the home you are offering and the dates you have in mind. It opens a private thread with that host and nobody else. Ask about the stairs, the neighbours, the parking — the boring questions are the ones that make a swap work.",
+        "panel": "message",
+        "ctaLabel": "See how requests work",
+        "ctaHref": "/swaps"
+      },
+      {
+        "key": "agree",
+        "title": "Agree the dates in writing",
+        "body": "Both sides confirm the same dates and terms before anything is settled. Either of you can withdraw right up to the moment it is accepted, and nothing is charged at any point — there is no payment step, because there is no payment.",
+        "panel": "calendar"
+      },
+      {
+        "key": "swap",
+        "title": "Swap keys and live somewhere else for a while",
+        "body": "You stay in their home while they stay in yours. Afterwards you each leave a review, which is what builds the record the next member will read — and what earns a host the ✓ Verified badge over time.",
+        "panel": "keys",
+        "ctaLabel": "List your home",
+        "ctaHref": "/list-your-home"
+      }
+    ],
+    "trust": [
+      {
+        "icon": "verified",
+        "title": "A badge that has to be earned",
+        "body": "✓ Verified means ninety days on SwapDoor, a filled-in profile, and at least three guest reviews averaging 4.5 or better. Most new members do not have it yet — so it tells you something real when they do."
+      },
+      {
+        "icon": "message",
+        "title": "Private, per-swap messaging",
+        "body": "Each conversation belongs to one swap request and is visible to exactly two people. No inbox full of strangers, and no negotiating in public."
+      },
+      {
+        "icon": "star",
+        "title": "Reviews tied to real swaps",
+        "body": "You can only review a home you actually stayed in, and only once. The database enforces it, so a rating is a record of what happened rather than of who shouted loudest."
+      }
+    ],
+    "faq": [
+      {
+        "group": "Money",
+        "q": "Does a swap cost anything at all?",
+        "a": "There is no accommodation charge and no booking fee — you exchange homes directly, so there is nothing to pay either way. You still pay for your own travel, and for anything you use while you are there, exactly as you would at home."
+      },
+      {
+        "group": "Money",
+        "q": "What about bills, cleaning and utilities?",
+        "a": "The usual arrangement is that each side keeps paying their own bills and leaves the home clean for the other. Anything unusual — a cleaner, a long stay pushing the heating bill up — is worth agreeing in the swap thread rather than assuming."
+      },
+      {
+        "group": "Safety",
+        "q": "Who is responsible if something gets damaged?",
+        "a": "You are, in the same way you would be as a guest in anyone home — and so are they. SwapDoor is not an insurer. Check whether your home insurance covers non-paying guests before your first swap; most policies do, but the wording varies and it is a five-minute call."
+      },
+      {
+        "group": "Safety",
+        "q": "How do I know a listing is real?",
+        "a": "Look at three things together: the photos, the reviews from members who actually stayed there, and how the host answers questions in the thread. A host with a track record carries a ✓ Verified badge. A host without one is not a red flag — it usually just means they are new."
+      },
+      {
+        "group": "Dates",
+        "q": "Do both homes have to be swapped at the same time?",
+        "a": "Not necessarily. A simultaneous swap is the simplest to arrange and by far the most common, but plenty of members agree a non-simultaneous exchange — you stay with them in spring, they stay with you in autumn. Say which one you mean in your first message."
+      },
+      {
+        "group": "Dates",
+        "q": "What if my plans change after we agree?",
+        "a": "Tell your partner as early as you can, in the thread — it is the whole reason the conversation stays attached to the swap. Nothing is charged, so changing plans costs money to nobody, but it costs the other person their trip, which is why the record of how you handle it ends up in your reviews."
+      },
+      {
+        "group": "Your home",
+        "q": "I rent. Can I still swap?",
+        "a": "Often yes, but check your tenancy agreement first, and tell your landlord. A home swap is not a sublet — no money changes hands — but the clause that matters is usually about occupancy rather than payment, so read it before you list."
+      },
+      {
+        "group": "Your home",
+        "q": "Do I have to swap my home to travel?",
+        "a": "You do, on SwapDoor — the exchange is the whole model, and it is what keeps the platform free and the trust symmetrical. If your home is not available for the dates you want to travel, a non-simultaneous swap is usually the way around it."
+      }
+    ]
+  }
+}

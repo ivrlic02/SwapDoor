@@ -1,73 +1,107 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { Navigation } from "@/components/navigation";
+import { Footer } from "@/components/footer";
+import { ExploreView, type ExploreInitial } from "@/components/explore-view";
+import { HomeSearchProvider } from "@/components/home-search-context";
+import {
+  getHouses,
+  topDestinations,
+  HOME_TYPES,
+  AMENITIES,
+  type Amenity,
+  type HomeType,
+} from "@/lib/houses";
+import { pageMetadata } from "@/lib/seo";
 
-type House = {
-  id: number;
-  name: string;
-  location: string;
-  country: string;
-  image: string;
-  description: string;
+// This page had no metadata at all, so a shared /explore link arrived carrying
+// the homepage's title and blurb — the reader could not tell from the preview
+// that they had been sent to the search rather than to the front door.
+//
+// The filters live in the query string and a shared link restores them, but the
+// card stays the same for every permutation on purpose: describing one person's
+// filter set is not what the next reader needs, and `searchParams` here would
+// make this route dynamic for a line of text.
+export const metadata: Metadata = pageMetadata({
+  title: "Browse homes – SwapDoor",
+  shareTitle: "Browse homes to swap",
+  description:
+    "Search verified homes to swap by destination, dates, guests and amenities — on a map or as a list. No nightly rate, no booking fees.",
+  path: "/explore",
+});
+
+const SORTS = ["featured", "price-asc", "price-desc", "rating"] as const;
+type SortKey = (typeof SORTS)[number];
+
+const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+const num = (v: string | string[] | undefined) => {
+  const n = Number(str(v));
+  return Number.isFinite(n) && n > 0 ? n : undefined;
 };
 
-type HousesResponse = {
-  houses: House[];
-};
-
-async function fetchHouses(): Promise<HousesResponse> {
-  const res = await fetch(
-    "https://gist.githubusercontent.com/ivrlic02/bd1d69cb1921220a341a099770b952cf/raw/6103bd76c57779026487390bc0712724d35f6903/data.json",
-    { cache: "no-store" }
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch houses");
-  }
-
-  return res.json();
+// Where/When/Who seed the reused search bar (via the provider); everything else
+// is Explore-only filter state.
+function parseSearchValues(sp: Record<string, string | string[] | undefined>) {
+  const guests = num(sp.guests);
+  return {
+    where: str(sp.q) || "",
+    when: str(sp.date) || "",
+    checkout: str(sp.checkout) || "",
+    stay: str(sp.stay) || "",
+    who: guests ? String(guests) : "",
+  };
 }
 
-export default async function ExplorePage() {
-  const { houses } = await fetchHouses();
+function parseInitial(sp: Record<string, string | string[] | undefined>): ExploreInitial {
+  const sortRaw = str(sp.sort);
+  const sort: SortKey | undefined = SORTS.includes(sortRaw as SortKey)
+    ? (sortRaw as SortKey)
+    : undefined;
+
+  const csv = (v: string | string[] | undefined) =>
+    (str(v) || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const types = csv(sp.types).filter((t): t is HomeType => (HOME_TYPES as string[]).includes(t));
+  const amenities = csv(sp.amenities).filter((a): a is Amenity => (AMENITIES as readonly string[]).includes(a));
+  const viewRaw = str(sp.view);
+
+  return {
+    maxPrice: num(sp.maxPrice),
+    sort,
+    types: types.length ? types : undefined,
+    amenities: amenities.length ? amenities : undefined,
+    minRating: num(sp.rating),
+    verifiedOnly: str(sp.verified) === "1" ? true : undefined,
+    view: viewRaw === "map" ? "map" : undefined,
+  };
+}
+
+export default async function ExplorePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [houses, sp] = await Promise.all([getHouses(), searchParams]);
+  const initial = parseInitial(sp);
+  const initialValues = parseSearchValues(sp);
+  const destinations = topDestinations(houses);
 
   return (
-    <main className="bg-[#0f1115] min-h-screen text-white">
-      {/* NAVIGATION — FULL WIDTH */}
-      <Navigation />
+    <main className="bg-bg min-h-screen text-fg">
+      {/* Nav sits *inside* the provider (like the home page) so it can dock the
+          search+filters pill in its own centre slot when the controls scroll
+          away. `live` keeps the pill in sync with the as-you-type filtering. */}
+      <HomeSearchProvider destinations={destinations} initialValues={initialValues} live>
+        <Navigation />
 
-      {/* PAGE CONTENT */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h1 className="text-4xl md:text-6xl font-bold mb-12">
-          Explore Homes
-        </h1>
+        <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
+          <header className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold">Explore homes</h1>
+          </header>
 
-        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {houses.map((house) => (
-            <Link
-              key={house.id}
-              href={`/explore/${house.id}`}
-              className="bg-[#1a1d23] rounded-xl overflow-hidden hover:scale-[1.02] transition"
-            >
-              <img
-                src={house.image}
-                alt={house.name}
-                className="h-48 w-full object-cover"
-              />
-              <div className="p-5">
-                <h2 className="text-xl font-semibold">
-                  {house.name}
-                </h2>
-                <p className="text-sm text-gray-400 mt-2 line-clamp-2">
-                  {house.description}
-                </p>
-                <p className="text-sm text-gray-500 mt-3">
-                  {house.location}, {house.country}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+          <ExploreView houses={houses} initial={initial} />
+        </section>
+      </HomeSearchProvider>
+
+      <Footer />
     </main>
   );
 }

@@ -22,10 +22,10 @@ export default async function MyListingsPage() {
     <main className="bg-bg min-h-screen text-fg">
       <Navigation />
 
-      <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
+      <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold">My listings</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">My listings</h1>
             <p className="text-muted mt-2">
               {listings.length > 0
                 ? `${listings.length} home${listings.length > 1 ? "s" : ""} you're offering to swap.`

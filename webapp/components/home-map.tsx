@@ -221,16 +221,20 @@ export default function HomeMap({
           )}
         </div>
 
+        {/* Two equal halves on a phone rather than two shrink-wrapped buttons
+            pushed to one edge: it puts both on the same alignment as the map
+            below them (CRAP alignment) and makes each a half-width target
+            instead of a 40px-tall pill (Fitts). Unchanged from `lg` up. */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={locateMe}
             disabled={locating}
-            className={buttonClass("secondary")}
+            className={buttonClass("secondary", "md", "flex-1 py-3 sm:flex-none sm:py-2.5")}
           >
             {locating ? "Locating…" : "📍 Use my location"}
           </button>
-          <Link href={exploreHref} className={buttonClass("primary")}>
+          <Link href={exploreHref} className={buttonClass("primary", "md", "flex-1 py-3 sm:flex-none sm:py-2.5")}>
             See all as a list →
           </Link>
         </div>
@@ -246,7 +250,12 @@ export default function HomeMap({
       <div className="relative">
         <div
           ref={containerRef}
-          className="h-[520px] w-full rounded-xl overflow-hidden border border-border z-0"
+          // 520px is right for a landscape screen where the fitted world is
+          // taller than the box. On a portrait phone the same 520 leaves the
+          // world floating in the middle of a mostly empty container, so the
+          // height steps down with the viewport instead (the leftover is also
+          // no longer light grey — see the mobile block in globals.css).
+          className="h-[320px] w-full rounded-xl overflow-hidden border border-border z-0 sm:h-[420px] lg:h-[520px]"
         />
         {filtered.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

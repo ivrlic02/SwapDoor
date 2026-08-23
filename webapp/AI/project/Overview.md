@@ -144,7 +144,7 @@ The final web application must:
 - [x] Implement user authentication (login-gated private content) — Supabase Auth; six gated routes (`/dashboard`, `/profile`, `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home`, `/swaps`)
 - [x] Build out search/filter functionality for swap listings — destination/dates/guests + type, amenities, rating, verified, budget; List/Map toggle; URL-synced
 - [x] Build public blog section with mixed media content — `/blog` + `/blog/[slug]`, **5 posts across 4 categories**, rendering ten block types including **video (the project's own pitch film) and code snippets**. The earlier narrowing to images-only was reopened on 2026-08-22: a block-model CMS made the other two nearly free, so the brief is met literally
-- [x] Ensure responsive design across breakpoints — QA'd at mobile/tablet/desktop
+- [x] Ensure responsive design across breakpoints — QA'd at mobile/tablet/desktop, then **redesigned for touch on 2026-08-23**: a device-measured heuristic evaluation (320–820px) and a rebuild of everything below `lg` — drawer, search sheets, Explore filter sheet, swipe galleries, 44px targets, mobile spacing — with the desktop rendering left byte-identical. See the last dated section in [Handoff.md](./Handoff.md)
 - [ ] Run usability evaluation with target personas (or representative users)
 - [ ] Run PageSpeed Insights performance audit
 - [ ] Finalize production deployment *(build is green; needs Vercel env vars + Supabase redirect URLs, and email auto-confirm turned off)*

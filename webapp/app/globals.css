@@ -485,3 +485,120 @@ input.range-brand:focus-visible::-moz-range-thumb {
     transition-duration: 1ms;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE & TABLET (below `lg`, i.e. up to 1023px)
+   ───────────────────────────────────────────────────────────────────────────
+   Everything in this file above this line is shared. Everything below it is
+   scoped to `max-width: 1023.98px` and exists only because a phone or a tablet
+   is not a small desktop: different pointer (a finger, ~44px, with no hover),
+   different aspect ratio, and a viewport that cannot afford decoration.
+
+   It is one block rather than rules sprinkled through the file so that the
+   desktop rendering is provably untouched — nothing here can reach it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023.98px) {
+  /* Native controls follow the OS, not the page, unless the page declares
+     which scheme it is drawn for. Without this, an unchecked checkbox in the
+     "What does it offer?" grid renders as a white square — on a phone, several
+     white squares are the brightest thing on the screen and they mark the
+     options that are *off*, so the strongest contrast on the page points at the
+     least important state (Lecture 5: contrast has to mark what matters). It
+     also puts the last white surfaces back on the theme (Nielsen #2).
+
+     Deliberately scoped to this block, like everything else here: the same is
+     true above `lg`, but the brief for this pass was to leave the desktop
+     rendering exactly as it was. It is a one-line move to `:root` when wanted. */
+  :root {
+    color-scheme: dark;
+  }
+
+  /* The reviews marquee stops moving and becomes a swipeable strip.
+     ─────────────────────────────────────────────────────────────────────────
+     Two rows of 19rem cards drifting past is a wall of testimony on a wide
+     screen. On a 390px one it is a single card at a time, and the 5rem fade at
+     each end — which exists so cards enter and leave rather than being cut —
+     was covering 160px of a 390px viewport, so *every* card on screen was
+     partly faded. Add motion to that and a review moves out of reach before it
+     can be read: the mechanism meant to make the reviews feel like a
+     population was, at this width, stopping them from being read at all.
+
+     So the pointer version is traded for the touch one. The strip keeps its
+     cards and its order and hands the scrolling to the reader, who can hold a
+     card still for as long as they like — which is what the whole section is
+     for. Snap points mean a flick lands on a card rather than between two. */
+  .rv-marquee {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    mask-image: none;
+    scrollbar-width: none;
+  }
+  .rv-marquee::-webkit-scrollbar {
+    display: none;
+  }
+  .rv-track {
+    animation: none;
+    padding-inline: 1rem;
+  }
+  .rv-track > li {
+    scroll-snap-align: center;
+  }
+  /* Nothing is looping any more, so the seamless-loop copy would just be the
+     same reviews printed a second time. */
+  .rv-track > [data-rv-dup] {
+    display: none;
+  }
+
+  /* Leaflet ships `.leaflet-container { background: #ddd }` in its own
+     stylesheet, which is injected AFTER globals.css and therefore beats the
+     token rule near the top of this file. On a wide screen it never shows: the
+     fitted world is taller than the box. On a portrait phone it is the opposite
+     — the world occupies about a third of the container and the rest is two
+     light-grey bands across a dark page, the single highest-contrast thing in
+     the section and it means nothing (Lecture 5: contrast must mark what
+     matters). Doubling the class outranks Leaflet's single one without
+     `!important`, and `surface-2` is exactly the colour the map's own section
+     is painted, so the bands stop existing rather than merely darkening. */
+  .leaflet-container.leaflet-container {
+    background: var(--color-surface-2);
+  }
+
+  /* Leaflet's own zoom buttons: 30×30 white squares with a black border. Two
+     faults on a phone — they are the only white surface left on the site
+     (Nielsen #2), and 30px is under the thumb floor, on the one control a
+     touch user actually needs because there is no scroll-wheel zoom (Fitts,
+     L3: "do increase the size of tiny targets"). */
+  /* Specificity note: Leaflet's own sheet is injected after this file, so a
+     matching selector loses the tie. Its strongest rule here is
+     `.leaflet-touch .leaflet-bar a` (0,3,0); anchoring on the container class,
+     which is on the same element as `.leaflet-touch`, makes these (0,4,0). */
+  .leaflet-container.leaflet-touch .leaflet-bar a,
+  .leaflet-container.leaflet-container .leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 20px;
+    background: var(--color-surface);
+    color: var(--color-fg);
+    border-bottom-color: var(--color-border);
+  }
+  .leaflet-container.leaflet-touch .leaflet-bar a:hover,
+  .leaflet-container.leaflet-container .leaflet-bar a:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-fg);
+  }
+  .leaflet-container.leaflet-touch .leaflet-bar,
+  .leaflet-container.leaflet-container .leaflet-bar {
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+  }
+  /* The attribution strip is a white bar on the same dark map. */
+  .leaflet-container .leaflet-control-attribution.leaflet-control-attribution {
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    color: var(--color-muted);
+  }
+  .leaflet-container .leaflet-control-attribution.leaflet-control-attribution a {
+    color: var(--color-accent);
+  }
+}

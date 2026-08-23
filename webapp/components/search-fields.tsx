@@ -62,8 +62,19 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         submit();
       }}
       className={[
-        "flex flex-col text-left shadow-xl shadow-black/20 transition-colors",
-        "gap-1 rounded-3xl p-1.5 sm:flex-row sm:items-stretch sm:gap-0 sm:rounded-full",
+        "flex text-left shadow-xl shadow-black/20 transition-colors",
+        // The HERO keeps its stacked-on-phones bar: it is the whole point of
+        // that screen, it has the room, and three labelled rows read clearly.
+        //
+        // The COMPACT bar does not. On /explore it is one of four control
+        // groups stacked above the results, and stacked it cost ~250px of a
+        // 844px screen before a single home appeared. Below `sm` it collapses
+        // to one row — icon plus value, exactly the cells the docked nav pill
+        // already uses, so the same control looks the same in both places
+        // (Nielsen #2; CRAP repetition). From `sm` up nothing changes.
+        variant === "compact"
+          ? "items-stretch gap-0 rounded-full p-1.5"
+          : "flex-col gap-1 rounded-3xl p-1.5 sm:flex-row sm:items-stretch sm:gap-0 sm:rounded-full",
         // The site's primary control used to be `surface` on `bg` — 1.35:1 of
         // luminance, i.e. very nearly the page itself, held apart by a hairline
         // alone (Lecture 5: contrasted elements must be *very* different). The
@@ -74,7 +85,7 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         open
           ? "border border-border bg-surface"
           : "border border-border-raised bg-surface-raised",
-        variant === "hero" ? "mx-auto mt-10 max-w-3xl" : "w-full",
+        variant === "hero" ? "mx-auto mt-8 max-w-3xl lg:mt-10" : "w-full",
       ].join(" ")}
     >
       <Segment
@@ -84,11 +95,12 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         placeholder="Search destinations"
         active={open === "where"}
         anyOpen={open !== null}
+        compact={variant === "compact"}
         onClick={() => toggle("where")}
         buttonRef={whereRef}
       />
       {/* Dividers fade out next to the active segment so nothing touches it. */}
-      <Divider hidden={open === "where" || open === "when"} />
+      <Divider compact={variant === "compact"} hidden={open === "where" || open === "when"} />
       <Segment
         label="When"
         icon={<CalendarGlyph />}
@@ -96,10 +108,11 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         placeholder="Length or dates"
         active={open === "when"}
         anyOpen={open !== null}
+        compact={variant === "compact"}
         onClick={() => toggle("when")}
         buttonRef={whenRef}
       />
-      <Divider hidden={open === "when" || open === "who"} />
+      <Divider compact={variant === "compact"} hidden={open === "when" || open === "who"} />
       <Segment
         label="Who"
         icon={<GuestGlyph />}
@@ -107,16 +120,23 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         placeholder="Any guests"
         active={open === "who"}
         anyOpen={open !== null}
+        compact={variant === "compact"}
         onClick={() => toggle("who")}
         buttonRef={whoRef}
       />
 
       <button
         type="submit"
-        className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:mt-0 sm:shrink-0 sm:self-stretch sm:px-7"
+        aria-label="Search"
+        className={[
+          "inline-flex items-center justify-center gap-2 rounded-full bg-brand font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:mt-0 sm:shrink-0 sm:self-stretch sm:px-7 sm:py-3",
+          variant === "compact"
+            ? "size-11 shrink-0 self-center p-0 sm:size-auto sm:self-stretch"
+            : "mt-1 px-6 py-3",
+        ].join(" ")}
       >
         <SearchGlyph />
-        Search
+        <span className={variant === "compact" ? "hidden sm:inline" : undefined}>Search</span>
       </button>
 
       {open === "where" && (
@@ -174,6 +194,7 @@ function Segment({
   placeholder,
   active,
   anyOpen,
+  compact = false,
   onClick,
   buttonRef,
 }: {
@@ -184,6 +205,8 @@ function Segment({
   placeholder: string;
   active: boolean;
   anyOpen: boolean;
+  /** One-row phone layout (the /explore bar). See the note on the form. */
+  compact?: boolean;
   onClick: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
 }) {
@@ -193,13 +216,19 @@ function Segment({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="group flex flex-1 rounded-2xl p-1 text-left sm:rounded-full"
+      aria-label={value ? `${label}: ${value}` : label}
+      className="group flex min-w-0 flex-1 rounded-2xl p-1 text-left sm:rounded-full"
     >
       {/* Inner chip is inset from the cell by the button's p-1, so the active
           highlight floats with breathing room and never meets the dividers. */}
       <span
         className={[
-          "flex w-full flex-col rounded-xl px-4 py-1.5 transition sm:rounded-full",
+          "flex w-full min-w-0 rounded-xl transition sm:rounded-full",
+          // One line on a phone in compact mode; the original two-line cell
+          // everywhere else, and everywhere from `sm` up.
+          compact
+            ? "items-center gap-1 px-2.5 py-2.5 sm:flex-col sm:items-stretch sm:gap-0 sm:px-4 sm:py-1.5"
+            : "flex-col px-4 py-1.5",
           active
             ? "bg-surface-raised shadow-xl shadow-black/40 ring-1 ring-brand/50"
             : anyOpen
@@ -218,36 +247,79 @@ function Segment({
         <span
           className={`flex items-center gap-1.5 text-xs font-semibold ${active ? "text-accent" : "text-muted"}`}
         >
-          <span aria-hidden className="shrink-0">
+          {/* Below 360px the three cells are ~76px each and the glyph plus its
+              gap costs 19 of them, which truncated "Where" and "When" to "Wh…"
+              — two different segments showing the same two letters (Nielsen #2:
+              the user should never have to wonder whether two things mean the
+              same). On the very narrowest phones the word wins; the raised pill
+              and its blue search button still say this is a control. */}
+          <span
+            aria-hidden
+            className={`shrink-0 ${compact ? "max-[359px]:hidden" : ""}`}
+          >
             {icon}
           </span>
-          {label}
+          {/* In the one-row phone bar the glyph carries the segment on its own
+              and the label becomes the placeholder below, because there is no
+              second line to put it on and ~95px per cell will not hold
+              "Search destinations" beside a word. */}
+          <span className={compact ? "hidden sm:inline" : undefined}>{label}</span>
         </span>
         {/* Was `text-muted/70` — 4.1:1 on the bar, under the 4.5:1 AA floor for
             text this size, on the very words that tell you the field is fillable.
             Plain `muted` is 6.0:1 on the raised surface. */}
-        <span className={`truncate text-sm ${value ? "text-fg" : "text-muted"}`}>
-          {value || placeholder}
+        <span
+          className={`truncate ${compact ? "text-[13px] sm:text-sm" : "text-sm"} ${
+            value ? "text-fg" : "text-muted"
+          }`}
+        >
+          {compact ? (
+            <>
+              <span className="sm:hidden">{value || label}</span>
+              <span className="hidden sm:inline">{value || placeholder}</span>
+            </>
+          ) : (
+            value || placeholder
+          )}
         </span>
       </span>
     </button>
   );
 }
 
-function Divider({ hidden = false }: { hidden?: boolean }) {
+function Divider({ hidden = false, compact = false }: { hidden?: boolean; compact?: boolean }) {
   return (
     <div
       aria-hidden
-      className={`hidden w-px self-center bg-border-raised transition-opacity duration-200 sm:block sm:h-8 ${
-        hidden ? "opacity-0" : "opacity-100"
-      }`}
+      className={`w-px self-center bg-border-raised transition-opacity duration-200 sm:block sm:h-8 ${
+        // The hero stacks below `sm`, where a vertical rule between rows would
+        // be nonsense; the compact bar is a row at every width, so it keeps its
+        // dividers all the way down.
+        compact ? "h-6" : "hidden"
+      } ${hidden ? "opacity-0" : "opacity-100"}`}
     />
   );
 }
 
-// ── Popover shell ───────────────────────────────────────────────────────────
-// Portaled to <body> and fixed-positioned under its anchor, so it escapes the
-// nav drop-down's overflow/clip. Repositions on scroll/resize.
+// ── Popover shell ─────────────────────────────────────────────────
+// Portaled to <body> and fixed-positioned, so it escapes the nav drop-down's
+// overflow/clip. Repositions on scroll/resize.
+//
+// TWO presentations, because one of them was broken on a phone. Anchored under
+// its segment, the When panel measured 492px tall starting at y=498 on a
+// 390×844 screen — it ran to y=990, and being `position: fixed` the page could
+// not be scrolled to reach the rest. The whole "Or stay flexible" block (four
+// duration choices) was simply unreachable on a phone: not hard to find, not
+// hidden, *impossible* (Nielsen #4, and Lecture 2's visibility principle — a
+// control the user cannot get to does not exist).
+//
+// So below `lg` the panel docks to the bottom edge instead, as a sheet with its
+// own scroll and a grab handle. That is not a new pattern invented here: it is
+// the same `.swap-sheet` rise the listing page's date picker already uses on
+// phones, so both date pickers on the site behave identically (CRAP repetition,
+// Nielsen #2). Above `lg` nothing changes — same anchored panel, same width.
+const SHEET_BELOW = 1024;
+
 function Popover({
   anchorRef,
   width,
@@ -258,9 +330,17 @@ function Popover({
   children: React.ReactNode;
 }) {
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [sheet, setSheet] = useState(false);
 
   useLayoutEffect(() => {
     function place() {
+      if (window.innerWidth < SHEET_BELOW) {
+        setSheet(true);
+        // Still set a truthy `pos` so the render gate below is one condition.
+        setPos({ top: 0, left: 0, width: 0 });
+        return;
+      }
+      setSheet(false);
       const el = anchorRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
@@ -278,6 +358,27 @@ function Popover({
   }, [anchorRef, width]);
 
   if (typeof document === "undefined" || !pos) return null;
+
+  if (sheet) {
+    return createPortal(
+      <>
+        {/* Dimmed page behind the sheet. It carries no handler of its own — the
+            form's existing outside-pointerdown listener closes the panel, and
+            this element is deliberately NOT marked `data-search-popover`, so a
+            tap on it counts as "outside". */}
+        <div className="fixed inset-0 z-[59] bg-black/50" aria-hidden />
+        <div
+          data-search-popover
+          className="swap-sheet fixed inset-x-0 bottom-0 z-[60] max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface p-4 text-fg shadow-2xl shadow-black/50"
+          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+        >
+          <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" />
+          {children}
+        </div>
+      </>,
+      document.body
+    );
+  }
 
   return createPortal(
     <div

@@ -30,7 +30,16 @@ export function Hero({ houses }: { houses: House[] }) {
     // there was no cue that the page continued at all. This leaves the next
     // section's heading visibly above the fold on a normal laptop while still
     // giving the headline a full screen of its own to sit in.
-    <section className="relative flex min-h-[76vh] items-center justify-center overflow-hidden px-6 py-20 text-center">
+    //
+    // Below `lg` that reasoning inverts. There are no decorations there (the
+    // mascot and the globe are lg-only), so 76vh of a portrait screen is a
+    // headline, a line of copy, a search bar — and then a large measured hole:
+    // ~200px of nothing under the bar on a 768×1024 tablet, where the whole
+    // section holds 364px of content. So below `lg` there is no minimum at all:
+    // the hero is its own content plus honest padding, and the map section
+    // arrives at the fold rather than a screen and a half later (Nielsen #9 —
+    // every extra unit of empty competes with the relevant ones).
+    <section className="relative flex items-center justify-center overflow-hidden px-6 py-14 text-center sm:py-20 lg:min-h-[76vh] lg:py-20">
       {/* Ambient brand glow — depth without clutter (aesthetic & minimalist) */}
       <div
         aria-hidden

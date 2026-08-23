@@ -10,7 +10,7 @@ export default function SignInPage() {
       <Navigation />
 
       {/* CONTENT */}
-      <section className="max-w-md mx-auto px-6 py-24">
+      <section className="max-w-md mx-auto px-5 py-14 sm:px-6 lg:py-24">
         {/* The page that asks for a password should say whose password it is.
             Two of the three personas commit on trust rather than price, and an
             unbranded credential form is exactly what they have been taught to

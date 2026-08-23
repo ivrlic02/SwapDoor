@@ -80,10 +80,15 @@ export function CodeBlock({
   code,
   language,
   caption,
+  collapsed = false,
 }: {
   code: string;
   language: string;
   caption?: string;
+  /** Ship it closed, behind a one-line disclosure. See the note in
+   *  `lib/cms-types.ts`: a snippet is evidence for a claim the prose has
+   *  already made, so it should be available rather than in the way. */
+  collapsed?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -101,30 +106,80 @@ export function CodeBlock({
     }
   }
 
+  const label = LANGUAGE_LABELS[language] ?? language;
+
+  const body = (
+    <>
+      {/* Long lines wrap instead of running off the right edge.
+          Measured before this: on a 390px screen the two snippets on the blog
+          were 602px and 632px wide inside a 356px box — **41% and 44% of every
+          line was off-screen**, with no visible scrollbar (touch draws none) and
+          nothing else saying the block could be scrolled at all. So a phone
+          reader saw *fragments of code*, which is neither readable nor
+          honest about being incomplete (Nielsen #3). Wrapped, with the
+          continuation indented so a broken line still reads as one line, the
+          block is complete at every width. Desktop is unaffected: both
+          snippets already fit (718 = 718px), so nothing there has anything
+          to wrap. */}
+      <pre className="overflow-x-auto whitespace-pre-wrap break-words p-4 text-[0.8125rem] leading-relaxed [padding-left:calc(1rem+2ch)] [text-indent:-2ch] sm:pl-4 sm:text-sm sm:[text-indent:0]">
+        <code className="font-mono">{highlight(code, language)}</code>
+      </pre>
+    </>
+  );
+
+  const copyButton = (
+    <button
+      type="button"
+      onClick={copy}
+      className="rounded px-2 py-1 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+
   return (
     <figure className="my-10">
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface-2">
-        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2">
-          <span className="flex items-center gap-2 text-xs font-semibold text-muted">
-            <CodeIcon className="h-4 w-4" />
-            {LANGUAGE_LABELS[language] ?? language}
-          </span>
-          <button
-            type="button"
-            onClick={copy}
-            className="rounded px-2 py-1 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            {copied ? "Copied" : "Copy"}
-          </button>
-        </div>
-        {/* The one place on the page allowed to scroll sideways — the article
-            body must never do so, so the overflow is trapped here. */}
-        <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
-          <code className="font-mono">{highlight(code, language)}</code>
-        </pre>
-      </div>
-      {caption && (
-        <figcaption className="mt-3 text-center text-sm text-muted">{caption}</figcaption>
+      {collapsed ? (
+        <details className="group overflow-hidden rounded-2xl border border-border bg-surface-2">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 bg-surface px-4 text-xs font-semibold text-muted transition marker:content-none hover:text-fg">
+            <span className="flex items-center gap-2">
+              <CodeIcon className="h-4 w-4" />
+              Show the {label} behind it
+            </span>
+            <span
+              aria-hidden
+              className="shrink-0 text-lg leading-none text-accent transition group-open:rotate-45"
+            >
+              +
+            </span>
+          </summary>
+          <div className="border-t border-border">
+            <div className="flex items-center justify-end px-4 py-2">{copyButton}</div>
+            {body}
+            {/* The caption lives INSIDE the disclosure: it describes the code,
+                so printed under a closed panel it was a caption for something
+                that was not on screen. */}
+            {caption && (
+              <p className="border-t border-border px-4 py-3 text-sm text-muted">{caption}</p>
+            )}
+          </div>
+        </details>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface-2">
+            <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2">
+              <span className="flex items-center gap-2 text-xs font-semibold text-muted">
+                <CodeIcon className="h-4 w-4" />
+                {label}
+              </span>
+              {copyButton}
+            </div>
+            {body}
+          </div>
+          {caption && (
+            <figcaption className="mt-3 text-center text-sm text-muted">{caption}</figcaption>
+          )}
+        </>
       )}
     </figure>
   );

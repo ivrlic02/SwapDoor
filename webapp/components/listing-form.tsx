@@ -1416,11 +1416,31 @@ export function ListingForm({
             would have built the whole listing blind. It follows the fields on
             exactly the steps the rail covers on a wider screen. */}
         {step < STEPS.length - 1 && (
-          <div className="mt-6 lg:hidden">
-            <h2 className="font-semibold">How members will see it</h2>
-            <p className="mt-1 text-sm text-muted">The Explore card, updating as you type.</p>
-            <div className="mt-4">{preview}</div>
-          </div>
+          <details className="group mt-6 rounded-xl border border-border bg-surface/60 lg:hidden">
+            {/* Open on a wide screen, closed on a phone — and closed is the
+                honest state. On the rail this is a *live* preview: the host
+                types on the left and watches the card change on the right. A
+                phone has one column, so the same card lands below every field
+                on the step, where it cannot be watched while typing and mostly
+                costs ~300px of scroll between the last field and the Continue
+                button. As a disclosure it stays one tap away for anyone who
+                wants to check (progressive disclosure, Lecture 3), and the
+                review step still shows it open and unprompted, which is the
+                moment it actually decides something. */}
+            <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 font-semibold marker:content-none">
+              How members will see it
+              <span
+                aria-hidden
+                className="shrink-0 text-lg leading-none text-accent transition group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <div className="border-t border-border px-4 pb-4 pt-4">
+              <p className="mb-3 text-sm text-muted">The Explore card, updating as you type.</p>
+              {preview}
+            </div>
+          </details>
         )}
 
         {/* ---- Actions ---------------------------------------------------
@@ -1428,7 +1448,7 @@ export function ListingForm({
             On a long step the primary action used to sit under a full screen of
             scroll; the same problem the listing page solved with its mobile
             swap bar (Fitts: the action should be where the thumb already is). */}
-        <div className="fixed inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-3 border-t border-border bg-surface/95 px-6 py-4 backdrop-blur lg:static lg:mt-8 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-6 lg:backdrop-blur-none">
+        <div className="fixed inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-3 border-t border-border bg-surface/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6 lg:static lg:mt-8 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-6 lg:backdrop-blur-none">
           {step > 0 && (
             <button
               type="button"

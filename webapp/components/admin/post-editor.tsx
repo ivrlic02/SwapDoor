@@ -539,6 +539,21 @@ function BlockFields({ block, onChange }: { block: Block; onChange: (b: Block) =
     case "code":
       return (
         <>
+          {/* Collapsed is the default for a new snippet, on purpose: a code
+              block on a blog is evidence for something the prose has already
+              said in words. If it is the only place a fact appears, the fact
+              is in the wrong place. */}
+          <FieldShell label="Display">
+            <Select
+              value={block.collapsed === false ? "open" : "collapsed"}
+              onChange={(v) => onChange({ ...block, collapsed: v !== "open" })}
+              ariaLabel="Code block display"
+              options={[
+                { value: "collapsed", label: "Collapsed — behind a “Show the code” line" },
+                { value: "open", label: "Always open" },
+              ]}
+            />
+          </FieldShell>
           <TextField
             label="Language"
             value={block.language}

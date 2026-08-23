@@ -77,6 +77,14 @@ export async function generateMetadata({
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
+// The same date, short. "Available September 5, 2026 – September 27, 2026" is
+// 48 characters; inside a rounded pill on a 390px screen it wrapped onto three
+// lines, and a pill that wraps stops reading as one chip among peers and starts
+// reading as a paragraph with a border round it (CRAP proximity). Both forms are
+// rendered and swapped by CSS, so the page stays a static prerender.
+const fmtDateShort = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
 // Three homes to look at next, so the page doesn't dead-end after the reviews:
 // same country first (you're already picturing that trip), then anything of the
 // same type, highest-rated first. The heading follows the actual picks — a
@@ -117,6 +125,9 @@ export default async function SwapDetailsPage({
   const availableFrom = fmtDate(house.date);
   const availableTo = house.availableTo ? fmtDate(house.availableTo) : null;
   const availability = availableTo ? `${availableFrom} – ${availableTo}` : availableFrom;
+  const availabilityShort = house.availableTo
+    ? `${fmtDateShort(house.date)} – ${fmtDateShort(house.availableTo)}`
+    : fmtDateShort(house.date);
   const { homes: similar, sameCountry } = similarHomes(allHouses, house);
   const hostName = house.host?.name ?? "Your host";
 
@@ -130,7 +141,7 @@ export default async function SwapDetailsPage({
 
       {/* Bottom padding leaves room for the mobile action bar to sit over the
           page without covering the footer's last row. */}
-      <div className="mx-auto max-w-6xl px-6 pb-32 pt-8 lg:pb-20">
+      <div className="mx-auto max-w-6xl px-4 pb-32 pt-6 sm:px-6 lg:pb-20 lg:pt-8">
         {/* "Your home is live", shown only when we arrive straight from
             publishing. Inside <Suspense> because it reads the query string —
             without the boundary that would opt every listing page out of static
@@ -146,7 +157,7 @@ export default async function SwapDetailsPage({
             (CRAP: proximity) instead of scattering across the header. */}
         <header className="mt-4 mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
-            <h1 className="text-3xl font-bold md:text-4xl">{house.name}</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">{house.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
               {/* A home nobody has stayed in yet has no rating to show. Stars
                   filled to 0.0 would read as a bad score rather than an absent
@@ -189,7 +200,7 @@ export default async function SwapDetailsPage({
           alt={`${house.name} in ${house.location}, ${house.country}`}
         />
 
-        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:mt-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
           {/* Main content */}
           <div>
             {/* The facts you scan before reading anything — one row, no cards,
@@ -197,7 +208,11 @@ export default async function SwapDetailsPage({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
               {house.type && <Fact>{house.type}</Fact>}
               <Fact>Sleeps {house.maxGuests}</Fact>
-              <Fact>Available {availability}</Fact>
+              <Fact>
+                Available{" "}
+                <span className="sm:hidden">{availabilityShort}</span>
+                <span className="hidden sm:inline">{availability}</span>
+              </Fact>
             </div>
 
             {/* Only a top rule on the host block: the next section draws its
@@ -305,7 +320,7 @@ export default async function SwapDetailsPage({
         </Section>
 
         {similar.length > 0 && (
-          <section className="mt-16 border-t border-border pt-10">
+          <section className="mt-12 border-t border-border pt-8 lg:mt-16 lg:pt-10">
             <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
               <h2 className="text-2xl font-semibold">
                 {sameCountry ? `More homes in ${house.country}` : "Similar homes you might like"}
@@ -314,7 +329,7 @@ export default async function SwapDetailsPage({
                 Browse all homes →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {similar.map((h) => (
                 <HouseCard key={h.id} house={h} />
               ))}
@@ -334,8 +349,8 @@ export default async function SwapDetailsPage({
 
 function Section({ title, children }: { title: string | null; children: React.ReactNode }) {
   return (
-    <section className="mt-10 border-t border-border pt-8 first:border-t-0">
-      {title && <h2 className="mb-4 text-2xl font-semibold">{title}</h2>}
+    <section className="mt-8 border-t border-border pt-6 first:border-t-0 lg:mt-10 lg:pt-8">
+      {title && <h2 className="mb-4 text-xl font-semibold sm:text-2xl">{title}</h2>}
       {children}
     </section>
   );

@@ -41,12 +41,15 @@ export function ReviewsMarquee({ reviews }: { reviews: FeaturedReview[] }) {
 
   return (
     // Named like the map section above it, so the strip can be linked to.
-    <section id="reviews" className="scroll-mt-20 overflow-hidden py-20">
-      <div className="mx-auto mb-10 max-w-6xl px-6 text-center">
+    <section id="reviews" className="scroll-mt-20 overflow-hidden py-14 lg:py-20">
+      <div className="mx-auto mb-7 max-w-6xl px-6 text-center lg:mb-10">
         <p className="mb-2 font-semibold text-accent">Real swaps, real people</p>
-        <h2 className="text-3xl font-bold">What members say afterwards</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">What members say afterwards</h2>
         <p className="mx-auto mt-3 max-w-xl text-muted">
-          Every review below was left by a member on a home they actually stayed in.
+          {/* "below" was accurate for two drifting rows; on a phone this is one
+              strip you swipe, so the sentence says that instead. */}
+          <span className="lg:hidden">Every review here was left by a member on a home they actually stayed in. Swipe to read more.</span>
+          <span className="hidden lg:inline">Every review below was left by a member on a home they actually stayed in.</span>
         </p>
       </div>
 
@@ -55,7 +58,15 @@ export function ReviewsMarquee({ reviews }: { reviews: FeaturedReview[] }) {
           the one beside it. */}
       <div className="rv-marquee overflow-hidden">
         <Row items={rowA} duration="72s" />
-        {rowB.length > 0 && <Row items={rowB} duration="88s" reverse className="mt-4" />}
+        {/* One row on a phone, two from `lg`. Below that, a second independent
+            horizontal scroller stacked under the first is two things to swipe
+            where the reader expected one, and the pair no longer read as a
+            wall — which was the only reason there were two of them. */}
+        {rowB.length > 0 && (
+          <div className="hidden lg:block">
+            <Row items={rowB} duration="88s" reverse className="mt-4" />
+          </div>
+        )}
       </div>
     </section>
   );

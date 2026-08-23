@@ -92,7 +92,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
     <main className="bg-bg min-h-screen text-fg">
       <Navigation />
 
-      <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
+      <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">
         <header className="mb-8 max-w-2xl">
           <Link
             href="/my-listings"
@@ -100,7 +100,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
           >
             ← My listings
           </Link>
-          <h1 className="text-4xl md:text-5xl font-bold mt-4">Edit listing</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-4">Edit listing</h1>
           <p className="text-muted mt-3">
             Change anything about <span className="text-fg">{house.name}</span> and save — the
             listing updates for everyone straight away. Its reviews, saves and link stay exactly as

@@ -55,11 +55,11 @@ export default async function HowItWorksPage() {
           rest of the page is a left-aligned column, so centring it here would
           have started the page on an alignment the page then abandons
           (Lecture 5 — find a strong alignment and stick to it). */}
-      <section className="mx-auto max-w-6xl px-6 pt-16 pb-14">
+      <section className="mx-auto max-w-6xl px-4 pt-10 pb-10 sm:px-6 lg:pt-16 lg:pb-14">
         <div className="max-w-2xl">
           <p className="mb-2 font-semibold text-accent">{content.intro.eyebrow}</p>
-          <h1 className="text-4xl font-bold leading-tight md:text-5xl">{content.intro.title}</h1>
-          <p className="mt-5 text-lg leading-relaxed text-muted">{content.intro.subtitle}</p>
+          <h1 className="text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">{content.intro.title}</h1>
+          <p className="mt-4 text-base leading-relaxed text-muted sm:mt-5 sm:text-lg">{content.intro.subtitle}</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
               href="/explore"
@@ -79,21 +79,21 @@ export default async function HowItWorksPage() {
       </section>
 
       {/* The four steps, each beside the part of the product it describes. */}
-      <section className="pb-24">
+      <section className="pb-16 lg:pb-24">
         <HowItWorksSteps steps={content.steps} panels={panels} />
       </section>
 
       {/* Trust */}
-      <section className="border-y border-border bg-surface-2 px-6 py-20">
+      <section className="border-y border-border bg-surface-2 px-4 py-14 sm:px-6 lg:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 max-w-2xl">
+          <div className="mb-7 max-w-2xl lg:mb-12">
             <p className="mb-2 font-semibold text-accent">Built on trust</p>
-            <h2 className="text-3xl font-bold">What actually protects you</h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">What actually protects you</h2>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
             {content.trust.map((t) => (
-              <div key={t.title} className="rounded-2xl border border-border bg-surface p-6">
-                <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand/15 text-accent">
+              <div key={t.title} className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand/15 text-accent sm:mb-4 sm:h-12 sm:w-12">
                   <TrustIcon name={t.icon} className="h-6 w-6" />
                 </span>
                 <h3 className="mb-2 text-lg font-semibold">{t.title}</h3>
@@ -108,14 +108,14 @@ export default async function HowItWorksPage() {
           named groups let someone jump straight to the one worry they arrived
           with (Hick's law, Lecture 3 — and progressive disclosure, since every
           answer ships closed). */}
-      <section id="faq" className="scroll-mt-24 px-6 py-20">
+      <section id="faq" className="scroll-mt-24 px-4 py-14 sm:px-6 lg:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 max-w-2xl">
+          <div className="mb-7 max-w-2xl lg:mb-12">
             <p className="mb-2 font-semibold text-accent">Before you commit</p>
-            <h2 className="text-3xl font-bold">Questions people actually ask</h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">Questions people actually ask</h2>
           </div>
 
-          <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">
+          <div className="grid gap-x-12 gap-y-8 md:grid-cols-2 lg:gap-y-10">
             {Object.entries(faqGroups).map(([group, items]) => (
               <div key={group}>
                 <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-accent">
@@ -125,7 +125,7 @@ export default async function HowItWorksPage() {
                   {items.map((item) => (
                     <details
                       key={item.q}
-                      className="group rounded-xl border border-border bg-surface p-5 [&_summary]:cursor-pointer"
+                      className="group rounded-xl border border-border bg-surface p-4 [&_summary]:cursor-pointer sm:p-5"
                     >
                       <summary className="flex items-start justify-between gap-4 font-semibold marker:content-none">
                         {item.q}
@@ -144,7 +144,7 @@ export default async function HowItWorksPage() {
             ))}
           </div>
 
-          <p className="mt-12 text-muted">
+          <p className="mt-8 text-muted lg:mt-12">
             Still unsure?{" "}
             <Link href="/explore" className="text-accent transition hover:text-brand">
               Look at a few homes

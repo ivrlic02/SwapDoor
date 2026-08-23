@@ -88,13 +88,13 @@ export default async function BlogPage({
     <main className="min-h-screen bg-bg text-fg">
       <Navigation />
 
-      <section className="mx-auto max-w-6xl px-6 pt-16 pb-24">
+      <section className="mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 lg:pt-16 lg:pb-24">
         <header className="max-w-2xl">
           <p className="mb-2 font-semibold text-accent">The SwapDoor Blog</p>
-          <h1 className="text-4xl font-bold md:text-5xl">
+          <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">
             Notes on swapping homes
           </h1>
-          <p className="mt-4 text-lg text-muted">
+          <p className="mt-4 text-base text-muted sm:text-lg">
             What we have learned from members about hosting well, travelling
             slowly, and trusting a stranger with your keys.
           </p>
@@ -103,7 +103,16 @@ export default async function BlogPage({
         {/* Filter row. Categories with no published posts are dropped rather
             than rendered as dead ends — a filter that always returns nothing is
             a promise the page cannot keep (Nielsen #1, match the real world). */}
-        <nav aria-label="Filter posts by category" className="mt-10 flex flex-wrap gap-2">
+        {/* The category row is the page's one horizontal set of choices, so
+            below `sm` it becomes a single scrolling rail rather than wrapping
+            onto three lines: wrapped, five pills pushed the first post ~120px
+            further down and the row stopped reading as one group of peers
+            (CRAP proximity). The negative margin lets it bleed to both screen
+            edges, which is what says "there is more this way". */}
+        <nav
+          aria-label="Filter posts by category"
+          className="-mx-4 mt-7 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 lg:mt-10"
+        >
           <FilterPill href="/blog" label="All" count={all.length} active={!active} />
           {CATEGORIES.filter((c) => counts[c.slug]).map((c) => (
             <FilterPill
@@ -128,10 +137,10 @@ export default async function BlogPage({
             {featured && (
               <Link
                 href={`/blog/${featured.slug}`}
-                className="group mt-10 block overflow-hidden rounded-3xl border border-border bg-surface transition hover:border-brand"
+                className="group mt-7 block overflow-hidden rounded-3xl border border-border bg-surface transition hover:border-brand lg:mt-10"
               >
                 <div className="grid md:grid-cols-[1.15fr_1fr]">
-                  <div className="relative h-64 min-h-[18rem] md:h-full">
+                  <div className="relative h-52 min-h-0 sm:h-64 sm:min-h-[18rem] md:h-full">
                     <Image
                       src={featured.cover}
                       alt=""
@@ -147,7 +156,7 @@ export default async function BlogPage({
                     <span className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent md:hidden" />
                   </div>
 
-                  <div className="flex flex-col justify-center gap-4 p-7 md:p-10">
+                  <div className="flex flex-col justify-center gap-3 p-5 sm:gap-4 sm:p-7 md:p-10">
                     <div className="flex items-center gap-3">
                       <span className="rounded-full bg-brand/15 px-2.5 py-1 text-xs font-semibold text-accent">
                         Latest
@@ -169,7 +178,7 @@ export default async function BlogPage({
             )}
 
             {rest.length > 0 && (
-              <div className="mt-10 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-7 lg:mt-10 lg:grid-cols-3">
                 {rest.map((post, i) => (
                   <Link
                     key={post.slug}
@@ -226,7 +235,7 @@ function FilterPill({
       // The active pill is filled AND carries the count — it never relies on
       // colour alone to say which filter is on (Lecture 6).
       aria-current={active ? "page" : undefined}
-      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+      className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
         active
           ? "border-brand bg-brand text-white"
           : "border-border text-muted hover:border-brand hover:text-fg"

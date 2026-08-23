@@ -67,10 +67,19 @@ export function HouseCard({ house, priority = false }: { house: House; priority?
 
       <Link href={href} className="block focus:outline-none">
         <div className="p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="font-semibold leading-snug truncate">{house.name}</h3>
+          {/* Name and value share a line from `lg` up, where there is room for
+              both. Below it they stack. On a 390px card the row put a truncated
+              name hard against the price with 12px between them — "Malibu
+              Oceanfront M… Est. $2,500" — so the two most important facts about
+              the home read as one run-on string, and the name, the thing the
+              user is actually scanning for, was the half that got cut (CRAP
+              proximity: the separation between two units has to be visible, and
+              Lecture 5's contrast rule: the more important element wins the
+              space). Stacked, the name gets the full width and two lines. */}
+          <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:justify-between lg:gap-3">
+            <h3 className="font-semibold leading-snug lg:truncate">{house.name}</h3>
             <span
-              className="shrink-0 text-sm font-semibold text-fg"
+              className="text-sm font-semibold text-fg lg:shrink-0"
               title="Estimated nightly value — SwapDoor is a home swap, so no cash changes hands"
             >
               <span className="text-muted font-normal">Est. </span>

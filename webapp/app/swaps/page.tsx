@@ -75,9 +75,9 @@ export default async function SwapsPage({
     <main className="min-h-screen bg-bg text-fg">
       <Navigation />
 
-      <section className="mx-auto max-w-5xl px-6 pb-20 pt-14">
+      <section className="mx-auto max-w-5xl px-4 pb-14 pt-8 sm:px-6 lg:pb-20 lg:pt-14">
         <header className="mb-6">
-          <h1 className="text-4xl font-bold md:text-5xl">My swaps</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">My swaps</h1>
           <p className="mt-2 text-muted">
             {swaps.length > 0
               ? "Every request you've sent or received, and the conversation that goes with it."

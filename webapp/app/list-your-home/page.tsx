@@ -26,9 +26,9 @@ export default async function ListYourHomePage() {
           with the site it was part of (CRAP alignment, Lecture 5; Nielsen #4).
           It is also the room the form needs, since it runs beside a live preview
           of the card it is building. */}
-      <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
+      <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">
         <header className="mb-8 max-w-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold">List your home</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">List your home</h1>
           <p className="text-muted mt-3">
             Three short steps and a last look before it goes live. Your draft saves as you type, so
             you can stop and come back — and you can edit or unlist your home at any time from My

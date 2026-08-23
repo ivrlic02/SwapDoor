@@ -36,6 +36,66 @@ function Icon({ title, children, ...props }: IconProps & { children: React.React
   );
 }
 
+// ── Mobile chrome ───────────────────────────────────────────────────────────
+// The drawer trigger, its close control and one mark per nav destination.
+// Added when the mobile drawer was rebuilt: the trigger used to be a "☰" text
+// character and the destinations had no marks at all, so the phone menu was
+// the one surface on the site not drawn from this set (CRAP repetition).
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <Icon strokeWidth={2} {...props}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </Icon>
+  );
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <Icon strokeWidth={2} {...props}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </Icon>
+  );
+}
+
+export function CompassIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m15 9-2 4.2-4 1.8 2-4.2z" />
+    </Icon>
+  );
+}
+
+export function RouteIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="6.5" cy="6.5" r="2.5" />
+      <circle cx="17.5" cy="17.5" r="2.5" />
+      <path d="M9 6.5h5a3.5 3.5 0 0 1 0 7h-4a3.5 3.5 0 0 0 0 7h5" />
+    </Icon>
+  );
+}
+
+export function ArticleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="4.5" width="16" height="15" rx="2.5" />
+      <path d="M8 9h8M8 12.5h8M8 16h5" />
+    </Icon>
+  );
+}
+
+export function SlidersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 8h10M18 8h2M4 16h4M12 16h8" />
+      <circle cx="16" cy="8" r="2" />
+      <circle cx="10" cy="16" r="2" />
+    </Icon>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <Icon {...props}>

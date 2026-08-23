@@ -66,11 +66,11 @@ export function CTA() {
   }[state];
 
   return (
-    <section className="px-6 py-24 bg-surface-2">
+    <section className="px-4 py-16 bg-surface-2 sm:px-6 lg:py-24">
       <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl font-bold md:text-4xl">{copy.title}</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">{copy.title}</h2>
         <p className="mx-auto mt-4 max-w-xl text-muted">{copy.body}</p>
-        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+        <div className="mt-7 flex flex-col justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-4">
           <Link href={copy.primary.href} className={buttonClass("primary", "lg")}>
             {copy.primary.label}
           </Link>

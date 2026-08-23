@@ -66,7 +66,7 @@ export default async function BlogPostPage({
     <main className="min-h-screen bg-bg text-fg">
       <Navigation />
 
-      <article className="mx-auto max-w-3xl px-6 pt-12 pb-16">
+      <article className="mx-auto max-w-3xl px-4 pt-8 pb-12 sm:px-6 lg:pt-12 lg:pb-16">
         <Link
           href={`/blog?category=${post.category}`}
           className="inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-accent"
@@ -82,8 +82,8 @@ export default async function BlogPostPage({
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
             {categoryLabel(post.category)}
           </p>
-          <h1 className="text-3xl font-bold leading-[1.15] md:text-5xl">{post.title}</h1>
-          <p className="mt-5 max-w-[60ch] text-lg leading-relaxed text-muted">{post.excerpt}</p>
+          <h1 className="text-[1.75rem] font-bold leading-[1.15] sm:text-3xl md:text-5xl">{post.title}</h1>
+          <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-muted sm:mt-5 sm:text-lg">{post.excerpt}</p>
 
           <div className="mt-7 flex items-center gap-3 border-t border-border pt-5">
             <Avatar name={post.author.name} src={post.author.avatarUrl} size={40} />
@@ -118,7 +118,7 @@ export default async function BlogPostPage({
         {/* The author, after the piece rather than before it — the reader now
             has a reason to care who wrote it. */}
         {post.author.bio && (
-          <aside className="mx-auto mt-16 max-w-[66ch] rounded-2xl border border-border bg-surface p-6">
+          <aside className="mx-auto mt-12 max-w-[66ch] rounded-2xl border border-border bg-surface p-5 sm:p-6 lg:mt-16">
             <div className="flex items-start gap-4">
               <Avatar name={post.author.name} src={post.author.avatarUrl} size={52} />
               <div>
@@ -136,7 +136,7 @@ export default async function BlogPostPage({
       {/* The old page ended on a single "Browse homes" button — a dead end for
           anyone who wanted to keep reading. Three posts first, then the CTA. */}
       {related.length > 0 && (
-        <section className="border-t border-border bg-surface-2 px-6 py-16">
+        <section className="border-t border-border bg-surface-2 px-4 py-12 sm:px-6 lg:py-16">
           <div className="mx-auto max-w-6xl">
             <h2 className="mb-8 text-2xl font-bold">Keep reading</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

@@ -224,7 +224,20 @@ export function SwapThread({
             onKeyDown={(e) => {
               // Enter sends, Shift+Enter makes a new line — the convention every
               // messaging app the personas already use follows (Nielsen #2).
-              if (e.key === "Enter" && !e.shiftKey) {
+              //
+              // On a phone that convention inverts, and keeping it here was a
+              // trap: a touch keyboard has no Shift+Enter, and its return key
+              // is how a person starts a second line. So the first paragraph
+              // break sent a half-written message to a stranger you are asking
+              // to swap homes with — a slip in Norman's sense (right goal,
+              // automatic action misfires), on an action that cannot be undone.
+              // Below `lg` the return key does what its own keyboard says it
+              // does, and Send is the only thing that sends.
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                window.matchMedia("(min-width: 1024px)").matches
+              ) {
                 e.preventDefault();
                 send();
               }
@@ -233,15 +246,21 @@ export function SwapThread({
             placeholder={`Message ${counterpart.name.split(" ")[0]}…`}
             className="w-full resize-none rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-fg placeholder:text-muted focus:border-brand focus:outline-none"
           />
+          {/* With the hint gone below `lg` the row has one child, so Send goes
+              full width there rather than sitting as a small chip in an empty
+              line — it is the only action in the composer (Fitts). */}
           <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="text-[11px] text-muted">
+            {/* A keyboard hint for a device with no keyboard is instructions
+                for someone else's interface (Nielsen #10 — help has to be about
+                the reader's actual task). */}
+            <p className="hidden text-[11px] text-muted lg:block">
               Enter to send · Shift + Enter for a new line
             </p>
             <button
               type="button"
               onClick={send}
               disabled={sending || draft.trim().length === 0}
-              className={buttonClass("primary", "sm")}
+              className={buttonClass("primary", "sm", "min-h-11 flex-1 lg:min-h-0 lg:flex-none")}
             >
               {sending ? "Sending…" : "Send"}
             </button>

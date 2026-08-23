@@ -48,7 +48,7 @@ export function Footer() {
     <footer className="border-t border-border bg-surface-2 text-sm text-muted">
       <h2 className="sr-only">Site footer</h2>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-6 py-16 lg:grid-cols-12 lg:gap-8">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 sm:gap-10 lg:grid-cols-12 lg:gap-8 lg:py-16">
         {/* The brand block. Wider than the link columns on purpose: it is the
             footer's anchor, not a peer of "Explore". The lockup is also a link
             home now — it was a static picture before, which is a logo in the

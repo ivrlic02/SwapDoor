@@ -59,7 +59,7 @@ export function HowItWorksSteps({
   }, [steps.length]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <div className="gap-14 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
         {/* The rail. Hidden below lg, where there is no room for a second
             column and the numbered heading on each section does the same job. */}
@@ -112,7 +112,7 @@ export function HowItWorksSteps({
           </ol>
         </nav>
 
-        <div className="space-y-20 lg:space-y-28">
+        <div className="space-y-14 sm:space-y-20 lg:space-y-28">
           {steps.map((step, i) => (
             <section
               key={step.key}
@@ -126,13 +126,13 @@ export function HowItWorksSteps({
               <p className="mb-2 text-sm font-semibold tabular-nums text-accent lg:hidden">
                 Step {String(i + 1).padStart(2, "0")}
               </p>
-              <h2 className="text-2xl font-bold leading-tight md:text-3xl">{step.title}</h2>
+              <h2 className="text-xl font-bold leading-tight sm:text-2xl md:text-3xl">{step.title}</h2>
               {/* Left-aligned at a controlled measure. The old page centred
                   every paragraph on the page, which Lecture 5 calls out
                   specifically: centre alignment is poor for paragraphs of text,
                   because the ragged left edge gives the eye no fixed place to
                   start the next line. */}
-              <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted">{step.body}</p>
+              <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-muted sm:mt-4 sm:text-lg">{step.body}</p>
 
               {step.ctaLabel && step.ctaHref && (
                 <Link
@@ -144,7 +144,7 @@ export function HowItWorksSteps({
                 </Link>
               )}
 
-              <div className="mt-8">{panels[i]}</div>
+              <div className="mt-6 sm:mt-8">{panels[i]}</div>
             </section>
           ))}
         </div>

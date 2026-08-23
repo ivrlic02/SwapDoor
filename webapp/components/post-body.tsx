@@ -233,7 +233,14 @@ function BlockView({ block, index }: { block: Block; index: number }) {
 
     case "code":
       if (!block.code.trim()) return null;
-      return <CodeBlock code={block.code} language={block.language} caption={block.caption} />;
+      return (
+        <CodeBlock
+          code={block.code}
+          language={block.language}
+          caption={block.caption}
+          collapsed={block.collapsed}
+        />
+      );
 
     case "listing":
       if (!block.houseId) return null;

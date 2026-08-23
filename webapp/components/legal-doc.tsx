@@ -44,10 +44,10 @@ export function LegalDoc({
     <main className="min-h-screen bg-bg text-fg">
       <Navigation />
 
-      <article className="mx-auto max-w-3xl px-6 pb-20 pt-16">
+      <article className="mx-auto max-w-3xl px-4 pb-14 pt-10 sm:px-6 lg:pb-20 lg:pt-16">
         <header>
           <p className="mb-2 font-semibold text-accent">{eyebrow}</p>
-          <h1 className="text-4xl font-bold md:text-5xl">{title}</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">{title}</h1>
           <p className="mt-5 text-lg text-muted">{intro}</p>
           <p className="mt-4 text-sm text-muted">Last updated: {updated}</p>
         </header>

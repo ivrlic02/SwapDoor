@@ -27,10 +27,10 @@ export function MapSection({
   exploreHref: string;
 }) {
   return (
-    <section id="home-map" className="scroll-mt-20 px-6 py-20 bg-surface-2">
+    <section id="home-map" className="scroll-mt-20 px-4 py-14 bg-surface-2 sm:px-6 lg:py-20">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-center text-3xl font-bold mb-3">Find homes on the map</h2>
-        <p className="text-center text-muted mb-10">
+        <h2 className="text-center text-2xl font-bold mb-3 sm:text-3xl">Find homes on the map</h2>
+        <p className="text-center text-muted mb-6 lg:mb-10">
           Search above and the map updates live — see available swaps around the world.
         </p>
         <HomeMap

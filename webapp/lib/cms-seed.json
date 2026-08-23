@@ -1,6 +1,5 @@
 {
   "_comment": "Initial CMS content, and the app-level fallback. ONE source of truth: lib/cms-defaults.ts imports this file so the site still renders when Supabase is unconfigured or a query fails (same discipline as the gist fallback in lib/houses.ts), and scripts/build-cms-seed.mjs turns the same file into supabase/seed-cms.sql. Edit content here only to change the SEED; once a row exists in Supabase, the database is what the site shows and the admin at /admin is where you edit it.",
-
   "posts": [
     {
       "slug": "why-home-swapping",
@@ -23,7 +22,10 @@
           "title": "SwapDoor — the idea in ninety seconds",
           "caption": "The pitch that started SwapDoor: sharing, not spending."
         },
-        { "type": "heading", "text": "1. Accommodation stops being a line item" },
+        {
+          "type": "heading",
+          "text": "1. Accommodation stops being a line item"
+        },
         {
           "type": "paragraph",
           "text": "Because you are exchanging homes rather than paying nightly rates, the single biggest cost of any trip effectively drops to zero. Two weeks that would have gone on a hotel bill go on the trip itself instead — trains, food, the things you actually remember."
@@ -40,22 +42,34 @@
           "alt": "A bright, welcoming living room with large windows",
           "caption": "A real home comes with a kitchen, a desk, and room to breathe."
         },
-        { "type": "heading", "text": "2. You live like a local, not beside one" },
+        {
+          "type": "heading",
+          "text": "2. You live like a local, not beside one"
+        },
         {
           "type": "paragraph",
           "text": "Swappers wake up on residential streets, shop at the corner market, and get honest recommendations from the person whose home it is. You experience a city the way the people who live there do — which is the part a hotel cannot sell you at any price."
         },
-        { "type": "heading", "text": "3. Space, and the things families actually need" },
+        {
+          "type": "heading",
+          "text": "3. Space, and the things families actually need"
+        },
         {
           "type": "paragraph",
           "text": "Full kitchens, laundry, separate bedrooms, somewhere for the kids to be loud. It is a genuine home away from home rather than a room with a mini-fridge, and for anyone travelling longer than a weekend that difference compounds every single day."
         },
-        { "type": "heading", "text": "4. Trust is built into the shape of the deal" },
+        {
+          "type": "heading",
+          "text": "4. Trust is built into the shape of the deal"
+        },
         {
           "type": "paragraph",
           "text": "A swap is mutual by design: your partner is staying in your home while you stay in theirs. That symmetry does more work than any policy document — both sides have exactly the same thing at stake, at exactly the same time."
         },
-        { "type": "heading", "text": "5. You travel more often" },
+        {
+          "type": "heading",
+          "text": "5. You travel more often"
+        },
         {
           "type": "paragraph",
           "text": "When the biggest cost of travel disappears, a long weekend or a month abroad suddenly sits inside the budget. Members find themselves saying yes to trips they would otherwise have quietly skipped."
@@ -67,7 +81,6 @@
         }
       ]
     },
-
     {
       "slug": "prepare-your-home",
       "title": "How to Prepare Your Home for a Swap",
@@ -80,14 +93,17 @@
       "content": [
         {
           "type": "paragraph",
-          "text": "Hosting a swap partner is a lot like having friends stay over — a little preparation goes a long way. The goal is simple: leave your home the way you would love to find someone else."
+          "text": "Hosting a swap partner is a lot like having friends stay over — a little preparation goes a long way. The goal is simple: leave your home the way you would love to find someone else’s."
         },
         {
           "type": "quote",
           "text": "The first swap I hosted, I spent a whole Saturday cleaning and forgot to write down the Wi-Fi password. Guess which one they messaged me about.",
           "attribution": "Sarah Miller, host in Minneapolis"
         },
-        { "type": "heading", "text": "Declutter, and make actual space" },
+        {
+          "type": "heading",
+          "text": "Declutter, and make actual space"
+        },
         {
           "type": "paragraph",
           "text": "Clear a shelf in the closet, empty a couple of drawers, free up a shelf in the fridge. Guests need somewhere to put their things before a house starts to feel like theirs — living out of a suitcase in someone else home is the fastest way to feel like an intruder."
@@ -98,7 +114,10 @@
           "alt": "A clean, tidy kitchen counter ready for guests",
           "caption": "A clean kitchen is the single most-mentioned detail in reviews."
         },
-        { "type": "heading", "text": "Write the one page that prevents twelve messages" },
+        {
+          "type": "heading",
+          "text": "Write the one page that prevents twelve messages"
+        },
         {
           "type": "paragraph",
           "text": "A house guide takes twenty minutes and saves both of you a week of small questions. Print it, leave it on the counter, and send a copy in the chat before they travel."
@@ -121,7 +140,10 @@
           "title": "Agree on pets and plants in writing",
           "text": "Watering a fern is a favour; a cat with medication is a commitment. Whatever the arrangement is, put it in the swap conversation before anyone books a flight, so both sides are agreeing to the same thing."
         },
-        { "type": "heading", "text": "Handle the essentials" },
+        {
+          "type": "heading",
+          "text": "Handle the essentials"
+        },
         {
           "type": "paragraph",
           "text": "Fresh sheets and towels, a smoke alarm that has been tested this year, and a spare-key plan that does not depend on a neighbour being home at the right hour. These are unglamorous and they are what reviews are quietly made of."
@@ -140,14 +162,16 @@
           ],
           "caption": "Before and after: the same rooms, with the personal clutter put away."
         },
-        { "type": "heading", "text": "Put the personal things away" },
+        {
+          "type": "heading",
+          "text": "Put the personal things away"
+        },
         {
           "type": "paragraph",
           "text": "Lock away documents, valuables and anything sentimental. This is not distrust — it is the same thing you would do before any houseguest, and it lets you relax while you are away, which is the entire point of the trip."
         }
       ]
     },
-
     {
       "slug": "trust-and-safety",
       "title": "Trust and Safety: Swapping with Confidence",
@@ -162,20 +186,35 @@
           "type": "paragraph",
           "text": "Letting someone stay in your home — and staying in theirs — only works if both sides feel safe. Trust is not a feature we bolted on at the end; it is the product. So it is worth being precise about what our signals mean, and what they do not."
         },
-        { "type": "heading", "text": "What the Verified badge is" },
         {
-          "type": "paragraph",
-          "text": "A ✓ Verified badge is a **reputation** signal, earned over time. It is not an identity check: we do not inspect anyone documents. A host earns it by being here long enough to have a record, and by having that record be good."
+          "type": "heading",
+          "text": "What the Verified badge is"
         },
         {
           "type": "paragraph",
-          "text": "Because the rule lives in the database rather than in the interface, no page can decide to show the badge on its own — every home inherits it from the person offering it:"
+          "text": "A ✓ Verified badge is a **reputation** signal, earned over time. It is not an identity check: we do not inspect anyone’s documents. A host earns it by being here long enough to have a record, and by having that record be good."
+        },
+        {
+          "type": "paragraph",
+          "text": "The rule is not a judgement call, and it is not something a page decides on its own — it is computed once, in the database, and every home a host offers inherits it from them. A host is Verified when all five of these are true at the same time:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "**Ninety days** as a member — long enough to have a history rather than a first impression.",
+            "**A bio that is actually written**, so there is a person behind the profile.",
+            "**A location on the profile**, so you know roughly who you are talking to.",
+            "**At least three guest reviews**, from real swaps that already happened.",
+            "**Those reviews averaging 4.5 or better.**"
+          ]
         },
         {
           "type": "code",
           "language": "sql",
           "code": "-- supabase/trust.sql — the whole definition of the badge\ncreate or replace function public.is_verified_host(p public.profiles)\nreturns boolean\nlanguage sql\nstable\nas $$\n  select\n    p.created_at < now() - interval '90 days'   -- a real history\n    and p.bio is not null                       -- a profile worth reading\n    and p.location is not null\n    and public.host_review_count(p) >= 3         -- at least three swaps\n    and public.host_rating(p) >= 4.5;            -- that went well\n$$;",
-          "caption": "One function, exposed to the app as a computed column. Change the rule here and every badge on the site changes with it."
+          "caption": "The same five conditions, as the one function that actually decides. Change the rule here and every badge on the site changes with it.",
+          "collapsed": true
         },
         {
           "type": "callout",
@@ -189,12 +228,18 @@
           "alt": "Two people shaking hands over a table",
           "caption": "Reviews from real swaps build a reputation that outlives any single trip."
         },
-        { "type": "heading", "text": "Reviews come from swaps, not from strangers" },
+        {
+          "type": "heading",
+          "text": "Reviews come from swaps, not from strangers"
+        },
         {
           "type": "paragraph",
           "text": "You can only review a home you actually swapped into, you cannot review your own listing, and you cannot review the same home twice. Those three rules are enforced by the database, not by the form — so the rating on a card is a record of what happened, not of who felt strongly enough to type."
         },
-        { "type": "heading", "text": "Talk before you commit" },
+        {
+          "type": "heading",
+          "text": "Talk before you commit"
+        },
         {
           "type": "paragraph",
           "text": "Every swap request opens a private thread between exactly two people. Use it. Ask about the neighbourhood at night, the stairs, the neighbours, the parking. A ten-minute conversation is the best safety feature on this site, and it is free."
@@ -207,7 +252,6 @@
         }
       ]
     },
-
     {
       "slug": "kyoto-neighborhood-guide",
       "title": "A Neighbourhood Guide to Kyoto",
@@ -222,7 +266,10 @@
           "type": "paragraph",
           "text": "Most visitors see Kyoto in three days and remember queues. The city rewards the opposite approach: pick one neighbourhood, stay in it, and let the famous things be a morning walk rather than an itinerary. Here is how I would spend two weeks if I were arriving for the first time."
         },
-        { "type": "heading", "text": "Stay north, not central" },
+        {
+          "type": "heading",
+          "text": "Stay north, not central"
+        },
         {
           "type": "paragraph",
           "text": "Central Kyoto is convenient and forgettable. The northern neighbourhoods — around Nishijin and Demachiyanagi — are where the machiya townhouses still stand, where the bakeries have queues of locals rather than tour groups, and where the river is a place people sit rather than photograph."
@@ -241,7 +288,10 @@
           ],
           "caption": "Nishijin in the evening — ten minutes by bike from the temples, and completely quiet."
         },
-        { "type": "heading", "text": "A week that is actually pleasant" },
+        {
+          "type": "heading",
+          "text": "A week that is actually pleasant"
+        },
         {
           "type": "list",
           "ordered": true,
@@ -250,7 +300,7 @@
             "Fushimi Inari at 6am — genuinely empty, and cool enough to climb.",
             "Nishiki market before eleven, then never again at any other hour.",
             "One long afternoon on the Kamo river with something cold.",
-            "The Philosopher path on a weekday, from the north end, downhill.",
+            "The Philosopher’s Path on a weekday, from the north end, downhill.",
             "A day trip to Nara, leaving before eight.",
             "Another day doing nothing. This is the one people skip and regret."
           ]
@@ -272,10 +322,9 @@
         }
       ]
     },
-
     {
       "slug": "working-from-a-swap",
-      "title": "Working From Someone Else Kitchen Table",
+      "title": "Working From Someone Else’s Kitchen Table",
       "excerpt": "Three years of remote work from swapped homes: what to check before you say yes, and the one question that saves the whole trip.",
       "cover": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6",
       "category": "travel",
@@ -287,7 +336,10 @@
           "type": "paragraph",
           "text": "I have worked from eleven swapped homes across four countries. The trips that went well and the trips that went badly did not differ by city, price or view. They differed by whether I asked three boring questions before I agreed to anything."
         },
-        { "type": "heading", "text": "Question one: what is the actual upload speed?" },
+        {
+          "type": "heading",
+          "text": "Question one: what is the actual upload speed?"
+        },
         {
           "type": "paragraph",
           "text": "Not the advertised speed. The measured one, from the room you will be sitting in, at the hour you will be working. Advertised fibre means nothing if the router is three concrete walls away from the only desk."
@@ -298,7 +350,10 @@
           "title": "Ask for a screenshot, not an adjective",
           "text": "The message I now send every host: could you run a speed test from wherever I would work, and send the screenshot? Nobody has ever been offended, and twice it has saved me a very bad fortnight."
         },
-        { "type": "heading", "text": "Question two: is there a desk, or is there a table?" },
+        {
+          "type": "heading",
+          "text": "Question two: is there a desk, or is there a table?"
+        },
         {
           "type": "paragraph",
           "text": "A kitchen table is fine for four days and ruinous for four weeks. If you are staying a month, a real chair matters more than the neighbourhood does — a fact I learned the expensive way in an otherwise perfect flat in Lisbon."
@@ -308,20 +363,32 @@
           "houseId": 4,
           "note": "Ubud — the one that had a real desk, and the reason I stayed six weeks."
         },
-        { "type": "heading", "text": "Question three: what happens at 9am local time?" },
+        {
+          "type": "heading",
+          "text": "Question three: what happens at 9am local time?"
+        },
         {
           "type": "paragraph",
           "text": "Building works, school runs, a café that puts its chairs out under your window. Time zones are the obvious problem and the solvable one; noise at the hour you take calls is neither."
         },
         {
           "type": "paragraph",
-          "text": "For what it is worth, I keep the whole thing in a note and paste it into every new swap thread. It is not elegant, but the checklist has never let me down:"
+          "text": "For what it is worth, I keep the whole thing in a note and paste it into every new swap thread before I agree to anything. It is three lines long, and it has never let me down:"
         },
         {
-          "type": "code",
-          "language": "ts",
-          "code": "// The three things I ask before agreeing to any swap longer than a week.\nconst checklist = [\n  \"Speed test screenshot, taken from the work spot\",\n  \"Photo of the desk and the chair, not the living room\",\n  \"What the street sounds like on a weekday morning\",\n] as const;\n\n// Everything else — the view, the kitchen, the neighbourhood — is negotiable.\n// These three are not, because none of them can be fixed once you arrive.\nexport function readyToCommit(answers: string[]): boolean {\n  return checklist.every((_, i) => Boolean(answers[i]?.trim()));\n}",
-          "caption": "Pasted into every swap thread. Hosts have universally been happy to answer."
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**A speed test screenshot**, taken from the spot I would actually be working in — not from next to the router.",
+            "**A photo of the desk and the chair.** Not the living room, not the view: the two pieces of furniture I will be sitting at for eight hours a day.",
+            "**What the street sounds like on a weekday morning** — the hour I take calls, not the hour I go to bed."
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "note",
+          "title": "Everything else is negotiable",
+          "text": "The view, the kitchen, the neighbourhood — all of that can be lived with, or lived around. These three cannot, because none of them can be fixed once you have arrived. Hosts have universally been happy to answer."
         },
         {
           "type": "quote",
@@ -331,7 +398,6 @@
       ]
     }
   ],
-
   "howItWorks": {
     "intro": {
       "eyebrow": "How it works",

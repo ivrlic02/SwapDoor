@@ -42,7 +42,7 @@ export default async function SwapThreadPage({
     <main className="min-h-screen bg-bg text-fg">
       <Navigation />
 
-      <div className="mx-auto max-w-3xl px-6 pb-20 pt-8">
+      <div className="mx-auto max-w-3xl px-4 pb-14 pt-6 sm:px-6 lg:pb-20 lg:pt-8">
         <Link href="/swaps" className="text-sm font-medium text-accent hover:underline">
           ← All my swaps
         </Link>

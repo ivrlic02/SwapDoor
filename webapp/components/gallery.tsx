@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEventHandler } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEventHandler,
+  type TouchEvent,
+} from "react";
 import Image from "next/image";
 import { BLUR_DATA_URL } from "@/lib/images";
 
@@ -25,6 +32,25 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
     (delta: number) => setIndex((i) => (i + delta + images.length) % images.length),
     [images.length]
   );
+
+  // Swipe inside the lightbox. The arrows are a pointer control (see the note
+  // on <LightboxNav>); on touch, a full-screen photo is swiped, which is what
+  // the card galleries on every other page already do (CRAP repetition).
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: TouchEvent) => {
+    const from = touchStart.current;
+    touchStart.current = null;
+    if (!from || !many) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - from.x;
+    const dy = t.clientY - from.y;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    go(dx < 0 ? 1 : -1);
+  };
 
   const openAt = (i: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
     openerRef.current = e.currentTarget;
@@ -141,8 +167,10 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/92 p-4"
+          className="fixed inset-0 z-[100] flex touch-pan-y items-center justify-center bg-black/92 p-4"
           onClick={close}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
           role="dialog"
           aria-modal="true"
           aria-label="Photo gallery"
@@ -152,7 +180,9 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
             aria-label="Close gallery"
             onClick={close}
             autoFocus
-            className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            // 44px on touch, where it is the only guaranteed way out of a
+            // full-screen overlay (Fitts); the desktop size is unchanged.
+            className="absolute right-4 top-4 grid size-11 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:size-10"
           >
             ✕
           </button>
@@ -232,7 +262,12 @@ function LightboxNav({
       type="button"
       onClick={onClick}
       aria-label={prev ? "Previous photo" : "Next photo"}
-      className={`absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+      // Pointer-only. On a phone these two discs sit on top of a photo that
+      // fills the screen, covering the thing they exist to help you look at,
+      // for a gesture the reader would have reached for anyway — so on touch
+      // the photo is swiped and the thumbnail strip below stays the visible
+      // signifier of how many are left (Nielsen #7 over a hidden gesture).
+      className={`absolute top-1/2 hidden size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:grid ${
         prev ? "left-4" : "right-4"
       }`}
     >

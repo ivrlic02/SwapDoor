@@ -11,6 +11,13 @@ import { UserMenu } from "@/components/user-menu";
 import { MobileAccount } from "@/components/mobile-account";
 import { useProfile } from "@/components/profile-context";
 import { DoorMark } from "@/components/brand";
+import {
+  ArticleIcon,
+  CloseIcon,
+  CompassIcon,
+  MenuIcon,
+  RouteIcon,
+} from "@/components/icons";
 
 export function Navigation() {
   const [open, setOpen] = useState(false);
@@ -65,6 +72,27 @@ export function Navigation() {
   // `dropOpen`; this presence only delays the unmount.
   const dropOpen = showPill && expanded;
   const dock = usePresence(showPill, 460);
+  // The drawer slides rather than blinking, so it has to outlive `open` by the
+  // length of its own exit — the same presence helper the search pill uses, so
+  // the header has one animation system rather than two.
+  const drawer = usePresence(open, 300);
+
+  // The drawer is modal on a phone, so it owes the reader the two exits every
+  // modal owes: Escape, and a page that stays put behind it. Neither existed —
+  // the body scrolled under the open panel, and Escape did nothing (#4).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   // Escape closes the docked drop-down (user control & freedom).
   useEffect(() => {
@@ -89,7 +117,7 @@ export function Navigation() {
             href="/"
             aria-label="SwapDoor — home"
             aria-current={pathname === "/" ? "page" : undefined}
-            className="doormark-trigger flex items-center gap-2 text-xl font-bold shrink-0 rounded-xl md:min-w-0 md:flex-1"
+            className="doormark-trigger flex items-center gap-2 text-xl font-bold shrink-0 rounded-xl lg:min-w-0 lg:flex-1"
           >
             <DoorMark />
             {/* Collapse the wordmark to icon-only on phones *only* while the
@@ -115,7 +143,7 @@ export function Navigation() {
           >
             {links.mounted && (
               <nav
-                className={`hidden items-center gap-8 md:flex motion-safe:transition-[clip-path,opacity] motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
+                className={`hidden items-center gap-8 lg:flex motion-safe:transition-[clip-path,opacity] motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
                   links.entered
                     ? "opacity-100 [clip-path:inset(0_0_0_0)]"
                     : "opacity-0 [clip-path:inset(0_0_0_100%)]"
@@ -161,7 +189,7 @@ export function Navigation() {
               signed in it's your avatar. Same arrangement Airbnb uses, so the
               corner means the same thing before and after you log in
               (Nielsen #2 consistency, Lecture 2 mapping). */}
-          <div className="hidden md:flex md:flex-1 md:min-w-0 items-center justify-end gap-3 h-full">
+          <div className="hidden lg:flex lg:flex-1 lg:min-w-0 items-center justify-end gap-3 h-full">
             <Link href={listHref} className={buttonClass("secondary", "md", "shrink-0")}>
               List Your Home
             </Link>
@@ -177,12 +205,20 @@ export function Navigation() {
             )}
           </div>
 
+          {/* Drawer trigger. It was a "☰" text character in a ~36px box: a
+              font glyph the OS picks (so it drew differently on every phone,
+              beside a header that is otherwise all traced vector) inside a
+              target under the thumb floor. Now a drawn mark from the shared
+              icon set in a 44px square (Fitts, L3; CRAP repetition, L5). */}
           <button
-            className="-m-2 p-2 text-xl text-fg shrink-0 md:hidden"
+            type="button"
+            className="-mr-2 grid size-11 shrink-0 place-items-center rounded-xl text-fg transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
             aria-label="Open menu"
+            aria-expanded={open}
+            aria-controls="mobile-drawer"
             onClick={() => setOpen(true)}
           >
-            ☰
+            <MenuIcon className="size-6" />
           </button>
         </div>
 
@@ -235,38 +271,92 @@ export function Navigation() {
         />
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/80">
-          <div className="absolute right-0 top-0 h-full w-[85%] bg-surface p-6">
-            <div className="flex justify-between mb-10">
+      {/* ── Mobile drawer ──────────────────────────────────────────
+          Rebuilt for touch. What it fixes, worst first:
+
+          • It was a trap. The backdrop carried no handler and nothing listened
+            for Escape, so the only way out of the one panel a phone user
+            actually opens was a 24px ✕ in the far corner — the exact
+            "no clearly marked exit" Nielsen #4 is about, and the reason the
+            Pottery Barn effect sets in on a small screen.
+          • The page kept scrolling behind it.
+          • It appeared and vanished instantly, inside a header where
+            everything else cross-wipes, so the panel never said where it came
+            from or where closing it would send you (#3, visibility of status).
+          • Its three destinations were bare text ~20px tall, while the account
+            rows directly beneath them were already 48px with an icon each —
+            two different row systems in one panel (CRAP repetition, Fitts). */}
+      {drawer.mounted && (
+        <div id="mobile-drawer" className="fixed inset-0 z-50 lg:hidden">
+          <div
+            aria-hidden
+            onClick={() => setOpen(false)}
+            className={`absolute inset-0 bg-black/70 motion-safe:transition-opacity motion-safe:duration-300 ${
+              drawer.entered ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            className={`absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col overflow-y-auto overscroll-contain border-l border-border bg-surface px-5 pt-4 shadow-2xl shadow-black/50 motion-safe:transition-transform motion-safe:duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+              drawer.entered ? "translate-x-0" : "translate-x-full"
+            }`}
+            style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+          >
+            <div className="mb-5 flex items-center justify-between">
               <span className="flex items-center gap-2 font-bold">
                 <DoorMark />
                 SwapDoor
               </span>
-              <button aria-label="Close menu" onClick={() => setOpen(false)}>✕</button>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setOpen(false)}
+                className="-mr-2 grid size-11 place-items-center rounded-xl text-muted transition hover:bg-white/[0.07] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                <CloseIcon className="size-5" />
+              </button>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <NavLink href="/explore" pathname={pathname} onClick={() => setOpen(false)}>
-                Explore
-              </NavLink>
-              <NavLink href="/how-it-works" pathname={pathname} onClick={() => setOpen(false)}>
-                How it Works
-              </NavLink>
-              <NavLink href="/blog" pathname={pathname} onClick={() => setOpen(false)}>
-                Blog
-              </NavLink>
-              <Link
-                href={listHref}
+            <nav className="flex flex-col gap-0.5">
+              <DrawerLink
+                href="/explore"
+                pathname={pathname}
+                icon={<CompassIcon className="size-5" />}
                 onClick={() => setOpen(false)}
-                className={buttonClass("secondary", "md", "w-full")}
               >
-                List Your Home
-              </Link>
-              {/* No dropdown on a phone — the drawer IS the menu, so the same
-                  account rows render inline under an identity header. */}
-              <MobileAccount onNavigate={() => setOpen(false)} />
-            </div>
+                Explore
+              </DrawerLink>
+              <DrawerLink
+                href="/how-it-works"
+                pathname={pathname}
+                icon={<RouteIcon className="size-5" />}
+                onClick={() => setOpen(false)}
+              >
+                How it Works
+              </DrawerLink>
+              <DrawerLink
+                href="/blog"
+                pathname={pathname}
+                icon={<ArticleIcon className="size-5" />}
+                onClick={() => setOpen(false)}
+              >
+                Blog
+              </DrawerLink>
+            </nav>
+
+            <Link
+              href={listHref}
+              onClick={() => setOpen(false)}
+              className={buttonClass("secondary", "lg", "mt-5 w-full")}
+            >
+              List Your Home
+            </Link>
+
+            {/* No dropdown on a phone — the drawer IS the menu, so the same
+                account rows render inline under an identity header. */}
+            <MobileAccount onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}
@@ -310,6 +400,46 @@ function NavLink({
       }`}
     >
       {children}
+    </Link>
+  );
+}
+
+// A drawer row. Same destinations as <NavLink>, laid out for a thumb instead
+// of a pointer: a 52px row with an icon, matching the account rows below it,
+// which <MobileAccount> already drew that way. Current is signalled three ways
+// — weight, an accent bar and a tinted row — never colour alone (L6, g.4).
+function DrawerLink({
+  href,
+  pathname,
+  icon,
+  children,
+  onClick,
+}: {
+  href: string;
+  pathname: string;
+  icon: ReactNode;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  const current =
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-current={current ? "page" : undefined}
+      className={`-mx-3 flex min-h-13 items-center gap-3 rounded-xl px-3 text-base transition ${
+        current
+          ? "bg-brand/10 font-semibold text-fg"
+          : "text-muted hover:bg-white/[0.05] hover:text-fg"
+      }`}
+    >
+      <span aria-hidden className={`shrink-0 ${current ? "text-accent" : "text-muted"}`}>
+        {icon}
+      </span>
+      <span className="flex-1">{children}</span>
+      {current && <span aria-hidden className="h-5 w-1 shrink-0 rounded-full bg-accent" />}
     </Link>
   );
 }

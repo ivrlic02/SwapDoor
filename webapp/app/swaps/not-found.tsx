@@ -26,13 +26,13 @@ export default function SwapNotFound() {
     <main className="bg-bg min-h-screen text-fg flex flex-col">
       <Navigation />
 
-      <section className="flex-1 max-w-xl mx-auto px-6 py-24 text-center">
+      <section className="flex-1 max-w-xl mx-auto px-5 py-16 text-center sm:px-6 lg:py-24">
         <MascotGlyph className="mx-auto h-32 w-auto opacity-40" />
 
         <p className="mt-8 text-sm font-semibold tracking-[0.16em] uppercase text-accent">
           Error 404
         </p>
-        <h1 className="mt-3 text-4xl md:text-5xl font-bold">This door doesn&rsquo;t open</h1>
+        <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-bold">This door doesn&rsquo;t open</h1>
         <p className="mt-4 text-muted">
           That swap request isn&rsquo;t in your inbox — it may have been withdrawn,
           or the link may belong to a swap between two other members. Nothing you

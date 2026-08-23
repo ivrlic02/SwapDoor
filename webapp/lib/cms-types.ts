@@ -31,7 +31,15 @@ export type Block =
   | { type: "callout"; tone: CalloutTone; title?: string; text: string }
   /** A YouTube embed. `id` is the 11-character video id, not a full URL. */
   | { type: "video"; provider: "youtube"; id: string; title: string; caption?: string }
-  | { type: "code"; language: string; code: string; caption?: string }
+  /** A code snippet.
+   *
+   *  `collapsed` ships it closed, behind a one-line disclosure. It exists
+   *  because a snippet is *evidence*, not prose: when the substance of a
+   *  passage is inside the code, the reader has been asked to parse a language
+   *  to learn something the page could simply have told them (Nielsen #1 —
+   *  speak the user's language, not the system's). The rule is now: say it in
+   *  words, and let the code sit underneath for whoever wants to check it. */
+  | { type: "code"; language: string; code: string; caption?: string; collapsed?: boolean }
   /** Renders a real listing card, read live from `houses` at request time. */
   | { type: "listing"; houseId: number; note?: string };
 
@@ -83,7 +91,7 @@ export function emptyBlock(type: BlockType): Block {
     case "video":
       return { type: "video", provider: "youtube", id: "", title: "" };
     case "code":
-      return { type: "code", language: "ts", code: "" };
+      return { type: "code", language: "ts", code: "", collapsed: true };
     case "listing":
       return { type: "listing", houseId: 0 };
     default:

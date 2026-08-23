@@ -21,9 +21,9 @@ export default async function DashboardPage() {
     <main className="bg-bg min-h-screen text-fg">
       <Navigation />
 
-      <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
+      <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">
         <header className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold">Saved homes</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Saved homes</h1>
           <p className="text-muted mt-2">
             {saved.length > 0
               ? `${saved.length} home${saved.length > 1 ? "s" : ""} you've saved to swap later.`

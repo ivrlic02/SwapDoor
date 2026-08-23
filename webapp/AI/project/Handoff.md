@@ -2,7 +2,7 @@
 
 > Originally written after a full pass over the codebase, with the goal of finishing the app to course-requirement quality in ~2–3 focused days, redoing the color system, and connecting **Supabase** for auth + data (headless CMS role). All three are done.
 >
-> **Last updated: 2026-08-22.** Read **§1** for what exists now, **"What's left to do"** for what doesn't, and the dated sections at the bottom for the reasoning behind each change (they are the raw material for the final report).
+> **Last updated: 2026-08-23.** Read **§1** for what exists now, **"What's left to do"** for what doesn't, and the dated sections at the bottom for the reasoning behind each change (they are the raw material for the final report).
 
 ---
 
@@ -164,7 +164,7 @@ Supabase satisfies "remote headless CMS" for the blog and listings. If the rubri
 
 | Requirement | Status | Action |
 |-------------|--------|--------|
-| Responsive across devices | ✅ Pass done | QA'd hero, nav, grids, filter panel, detail layout at mobile/tablet/desktop; single-column stacks, `sm/lg` grid breakpoints, sticky sidebar collapses |
+| Responsive across devices | ✅ Done | Was "it fits"; since **2026-08-23** it is designed for touch. Full heuristic evaluation measured on emulated devices (320–820px) and rebuilt below `lg`: drawer, search sheets, Explore filter sheet, swipe galleries, touch targets ≥ 44px, mobile rhythm — desktop provably unchanged. See the last dated section |
 | Search / filter of listings | ✅ Done | Interactive home map **+** structured filters on `/explore` (destination search, guests, max-price slider, available-from date, sort) with live count, empty state, and shareable URL params. Hero search now feeds straight into these filters |
 | User login for private content | ✅ Live | Supabase Auth connected + verified. The private area is six real gated routes, not an empty gate: `/dashboard` (wishlist), `/profile` (+ account settings), `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home` — which **writes** to the CMS as the signed-in host — and `/swaps` (+ `/swaps/[id]`), the request inbox and its conversation |
 | Public blog (images + video + code) | ✅ Done | `/blog` + `/blog/[slug]`, **5 posts across 4 categories**, served from Supabase. The narrowed "images only" scope was reopened on 2026-08-22: the block model made video and code snippets nearly free, so the brief is now met literally |
@@ -2459,3 +2459,253 @@ and the new FAQ. `/admin` signed-out returns **307 → `/sign-in?next=%2Fadmin`*
   because that script is plain `.mjs` and the original is TypeScript. Harmless
   (the app recomputes when the stored value is missing) but it is drift waiting
   to happen.
+
+### The phone and the tablet stopped being a narrow desktop (2026-08-23)
+
+The site had always *fitted* on a phone — nothing overflowed, nothing was
+unreachable by luck — but it had never been *designed* for one. Every screen
+below `lg` was the desktop layout with its columns stacked, its hover
+affordances forced visible, and its spacing unchanged. This pass was a
+heuristic evaluation (Lecture 4 method: findings ranked by severity, each tied
+back to a lecture) carried out **on the device**, followed by fixes scoped so
+that **nothing above 1023px changed at all**.
+
+**How it was measured.** A CDP driver drove headless Chrome with real device
+metrics — 320×700, 360×740, 390×844, 640, 768×1024, 820×1180 — and, for the
+gated routes, signed in as a demo host. Every number quoted below was read out
+of the running page, not estimated. `document.scrollWidth === clientWidth` at
+every width before and after, so none of this was fixing an overflow; it was
+fixing a design.
+
+**Where "mobile" ends: `lg` (1024px).** The desktop nav used to switch on at
+`md` (768px), which is where a tablet lives — measured at 768, "How it Works"
+wrapped onto two lines and the header's three groups fought for the row. The
+brief was explicitly that tablets count as mobile, so the nav, the layout
+switches and the sheets all now hold until `lg`. Two things use `sm` (640px)
+instead, and deliberately: Explore's filter pills and the compact search bar
+both still read well at 768–1023, and collapsing a control that works is not
+mobile design.
+
+#### The ranked findings, and what each became
+
+**S1 — The drawer was a trap (Nielsen #4, Fitts).** The backdrop carried no
+handler and nothing listened for Escape, so the only exit from the one panel a
+phone user actually opens was a 24px ✕ in the far corner. The page kept
+scrolling behind it. It appeared and vanished instantly inside a header where
+everything else cross-wipes. And its three destinations were bare text ~20px
+tall, directly above account rows that `MobileAccount` had already built at
+48px with an icon each — two row systems in one panel (CRAP repetition).
+It now slides in on the same `usePresence` helper the search pill uses, closes
+on backdrop tap and on Escape, locks the body, and gives each destination a
+52px row with a mark from the shared icon set. Current is signalled by weight,
+an accent bar and a tinted row — never colour alone (Lecture 6, guideline 4).
+The `☰` text character became a drawn `MenuIcon` in a 44px square: an OS font
+glyph was the one part of the header not traced vector.
+
+**S2 — The tablet band.** See above: `md:` → `lg:` on the nav's three slots.
+
+**S3 — Explore buried its results under its controls (Hick's law, Nielsen #9,
+CRAP alignment).** Measured at 390×844: the title, the stacked search bar, three
+wrapped filter pills, a sort control alone on its own line and the budget card
+filled **~620px**, so the page whose entire purpose is to show homes showed no
+home without scrolling. The sort control sat on `ml-auto`, breaking the left
+edge every other element shared. Two changes:
+
+- The **compact search bar collapses to one row** below `sm` — icon plus value,
+  the same cells the docked nav pill already uses, so one control looks like
+  itself in both places. Below 360px the glyph drops so "Where" and "When" stop
+  truncating to the same "Wh…". The hero bar is untouched: it is the point of
+  that screen and it has the room.
+- The pills, the sort and the budget slider move into **one "Filters" button
+  and a bottom sheet**, badge-counted, footer reading "Show 14 homes" rather
+  than "Apply" so the effect is visible before it is committed to (#3). A sheet
+  rather than narrower pills because the pill panels are anchored popovers —
+  see S4, they have the same fatal bug. First home now appears at **y≈340
+  instead of y≈780**.
+
+**S4 — Part of the search was physically unreachable on a phone (Nielsen #4).**
+The worst finding of the pass, and it was invisible from a desktop. The "When"
+popover measured 492px tall starting at y=498 on a 390×844 screen: it ran to
+y=990, and being `position: fixed` the page could not be scrolled to reach the
+rest. The whole "Or stay flexible" block — four duration choices — could not be
+got to at all. Below `lg` every search popover now docks to the bottom edge as
+a sheet with its own scroll, using the same `.swap-sheet` rise the listing
+page's date picker already had. Above `lg`, byte-identical.
+
+**S5 — The reviews marquee was unreadable at 390px (Lecture 5, contrast).** Two
+rows of 19rem cards is a wall of testimony on a wide screen. On a phone it is
+one card at a time, and the 5rem fade at each end covered **160px of a 390px
+viewport**, so every card on screen was partly faded — and it was moving. The
+mechanism meant to make the reviews read as a *population* was stopping them
+being read at all. Below `lg` it is one row, no motion, no mask, scroll-snap:
+the reader holds a card still for as long as they like, which is what the
+section is for. Desktop keeps both drifting rows.
+
+**S6 — The home map was a 520px box with two light-grey bands.** Leaflet ships
+`.leaflet-container { background: #ddd }` in a stylesheet injected *after*
+`globals.css`, so it beats the token rule. On a wide screen it never shows: the
+fitted world is taller than the box. On a portrait phone the world took about a
+third of the container and the rest was the brightest thing in the section,
+meaning nothing. Fixed by height (`320 / 420 / 520`) plus a doubled-class
+override to out-specify Leaflet — and `surface-2` is exactly the colour the
+map's own section is painted, so the bands stop existing rather than merely
+darkening. Leaflet's 30px white zoom buttons and its white attribution strip
+went the same way: 44px, on-theme, mobile-scoped.
+
+**S7 — Targets under the thumb floor (Fitts, Lecture 3: "do increase the size
+of tiny targets").** Card-gallery arrows 32px, its dots 6px, Leaflet's controls
+30px, the lightbox close 40px, the drawer trigger ~36px. All now ≥44px on
+touch, or replaced — see S8.
+
+**S8 — Hover UI was being forced onto touch screens.** The brief asked for this
+explicitly, and the code said so itself: the card gallery's arrows live at
+`opacity-0` and appear under a pointer, and were force-shown with
+`max-md:opacity-100` — two discs parked permanently over the middle of every
+photo on the page. Below `lg` they are gone and the photo answers a **swipe**,
+which is what a finger on a photo already expects (Nielsen #1: follow the
+platform's real-world convention). The dots stay, because without them the
+swipe would be a gesture you had to know about rather than see (Lecture 2), and
+they grow into a ~28×36px strip since on touch they are the only explicit
+control left. A swipe that ends on a link no longer opens the listing. The
+lightbox got the same treatment: swipe, arrows `lg`-only, thumbnail strip as
+the visible signifier. Also removed on touch: the **fake browser chrome** (three
+dots and `swapdoor.app/explore`) on the `/how-it-works` panels — a picture of a
+desktop browser, shown to someone who is not looking at one.
+
+**S9 — The card header collided.** `Malibu Oceanfront M… Est. $2,500` — a
+truncated name hard against the price with 12px between them, so the two most
+important facts read as one run-on string and the *name*, the thing being
+scanned for, was the half that got cut. Below `lg` they stack; the name gets
+the full width and two lines. The listing page's availability chip had the same
+shape of problem — 48 characters inside a rounded pill wrapped onto three lines
+— and now renders a short date form below `sm`.
+
+**S10 — The listing page showed its primary action twice.** Scrolled to the
+swap panel on a phone, the page carried "Sign in to propose a swap" as a
+full-width button in the panel *and* "Sign in to propose" in the fixed bar
+200px below it: one action, two wordings, on screen together (Nielsen #2). The
+bar is the fallback, so the bar yields — an `IntersectionObserver` on a
+sentinel after the panel's CTA hides it while the real control is in view.
+
+**S11 — `Enter` sent half-written messages.** In the swap thread, Enter sends
+and Shift+Enter makes a new line, which is right on a keyboard and a trap on a
+phone: a touch keyboard has no Shift+Enter, and its return key is how a person
+starts a second line. The first paragraph break sent an unfinished message to
+a stranger you are asking to swap homes with — a **slip** in Norman's sense
+(right goal, automatic action misfires) on an action that cannot be undone.
+Below `lg`, return does what its own keyboard says it does. The
+"Shift + Enter" hint — instructions for a device the reader is not holding —
+is hidden there too, and Send goes full width now that it is alone on its row.
+
+**S12 — Vertical rhythm.** `py-20`/`py-24` and 40px titles are desktop
+measurements. Below `lg` sections come down to `py-14`, gutters to 16px, page
+titles one step, and the four How-it-Works cards lie down into icon-left rows
+instead of four centred cards costing ~900px of scroll to say four words. The
+home page went from **7104px to 5746px** — 19% shorter — with nothing removed.
+
+**S13 — The last white surfaces.** Unchecked native checkboxes in the listing
+form rendered as white squares: on a dark page the strongest contrast on the
+screen was pointing at the options that are *off*. `color-scheme: dark` fixes
+every native control at once.
+
+#### How the scoping works
+
+Every rule that could reach the desktop lives in **one block at the bottom of
+[globals.css](../../app/globals.css)**, inside `@media (max-width: 1023.98px)`,
+so the desktop rendering is provably untouched — nothing in there can reach it.
+Everything else is Tailwind: a mobile-first base with an `lg:` (or `sm:`) escape
+restoring the previous value exactly. Desktop was re-screenshotted at 1280 after
+every step of the pass; the home page, Explore, the listing page, `/how-it-works`
+and the marquee are pixel-unchanged.
+
+Two things are **deliberately left as they were on desktop**, both mobile-scoped
+here rather than fixed globally, because the brief was not to touch it:
+
+1. **Leaflet's `#ddd` container background and its white zoom controls** are
+   still there above `lg`. They are invisible on the home map at that width, but
+   the controls are genuinely off-theme everywhere.
+2. **`color-scheme: dark`** — the white native checkboxes are a desktop problem
+   too. Moving both to `:root` is a one-line change when wanted.
+
+#### What was checked
+
+`tsc`, `eslint` over `app/`, `components/` and `lib/`, and `next build` are all
+clean; `/` and `/how-it-works` still prerender static and the blog and listing
+pages still SSG. No horizontal overflow at 320, 360, 390, 640, 768 or 820.
+Verified on device: the drawer closes three ways, the When sheet's flexible
+block is reachable, the filter sheet scrolls with a fixed footer, the mobile
+action bar disappears when the panel's CTA is on screen, Leaflet's controls
+measure 44px on mobile and 30px on desktop, and the reviews strip is a
+scroll-snap container on mobile and an animating marquee on desktop.
+
+### Two blog posts were making the reader parse code to get the point (2026-08-23)
+
+Reported from the page: *"in some posts pieces of code just sit there instead of
+being styled text."* Correct, and it was worse than a styling problem — in both
+cases the **substance of the passage only existed inside the snippet**.
+
+- `working-from-a-swap` is a post about three questions to ask a host before a
+  long remote-work stay. All three existed only as string literals in a
+  TypeScript array, and the two sentences qualifying them were `//` comments.
+  A reader who does not read code got a heading promising three questions and
+  then a `const` declaration.
+- `trust-and-safety` is the post a cautious member reads to find out what
+  ✓ Verified means. The exact rule — 90 days, a bio, a location, three reviews,
+  4.5 average — appeared **only** in SQL. The prose above it said "long enough
+  to have a record, and … that record be good", which is not a rule.
+
+That is Nielsen #1 the wrong way round: the page was speaking the system's
+language instead of the reader's, on the two paragraphs that mattered most.
+
+**What changed.** The content came out of the code and became what it always
+was — an ordered list of three checks plus a callout in one post, an unordered
+list of five conditions in the other, both in the site's own type. The
+TypeScript snippet is gone entirely: it was a travel post, and nothing in it
+was about code. The SQL stays, because that post genuinely *is* about how the
+badge is computed — but **collapsed**, behind one line reading *"Show the SQL
+behind it"*, as evidence for a claim the prose has now already made.
+
+**New: `collapsed` on the code block.** [cms-types.ts](../../lib/cms-types.ts)
+gained `code.collapsed?: boolean`, [code-block.tsx](../../components/code-block.tsx)
+renders a `<details>` when it is set, and the `/admin` block editor has a
+**Display** dropdown (Collapsed / Always open). New code blocks default to
+**collapsed**, deliberately: if a snippet is the only place a fact appears, the
+fact is in the wrong place.
+
+**Course requirement.** Overview §5 asks the blog to carry code snippets. It
+still does — one, in `trust-and-safety` — but it is now a disclosure rather
+than a wall. If a grader wants a code block open on the page, flipping that one
+block's Display to *Always open* in `/admin` is the whole change.
+
+#### Two defects found while in there
+
+**The snippets were unreadable on a phone.** `<pre>` was `overflow-x: auto`,
+which is right on a desktop and useless on touch, where no scrollbar is drawn.
+Measured at 390px: the two blocks were **602px and 632px wide inside a 356px
+box — 41% and 44% of every line off-screen**, with nothing saying the block
+scrolled. Long lines now wrap, with a 2ch hanging indent below `sm` so a broken
+line still reads as one line. Re-measured: `scrollWidth === clientWidth`, 0%
+hidden. Desktop is untouched — both snippets already fitted exactly (718 =
+718px), so there is nothing there to wrap, and the hanging indent is `sm`-scoped
+so it cannot skew the unwrapped lines.
+
+**Every apostrophe had been stripped from the seed.** The post title read
+*"Working From Someone Else Kitchen Table"*, and the body carried *"we do not
+inspect anyone documents"* and *"The Philosopher path"*. Repaired in
+[cms-seed.json](../../lib/cms-seed.json) with the typographic apostrophe the
+rest of the site uses. Worth knowing the title is also the `og:title` on a
+shared link, so this was visible outside the site too.
+
+#### Still open, and not touched here
+
+**`public.blog_posts` is empty.** `supabase/cms.sql` was applied (the table
+exists) but **`supabase/seed-cms.sql` was never run**, so `/blog` has been
+serving the committed fallback in `lib/cms-seed.json` this whole time. It
+renders identically, which is why nothing looked wrong — but the "content in a
+remote headless CMS" requirement is currently satisfied by a file in the repo,
+not by the database, and `/admin` shows no posts to edit. One paste of the
+regenerated `supabase/seed-cms.sql` into the SQL editor fixes it; it upserts on
+`slug`, so it is safe to run more than once. The same applies to
+`site_content` for `/how-it-works` — check it before the demo.
+
+`tsc`, `eslint` and `next build` clean; all five posts still prerender.

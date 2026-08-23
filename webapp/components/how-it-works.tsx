@@ -41,20 +41,28 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-surface-2 px-6 py-20">
+    <section className="bg-surface-2 px-4 py-14 sm:px-6 lg:py-20">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-12 text-center">
+        <div className="mb-7 text-center lg:mb-12">
           <p className="mb-2 font-semibold text-accent">Simple by design</p>
-          <h2 className="text-3xl font-bold">How it works</h2>
+          <h2 className="text-2xl font-bold sm:text-3xl">How it works</h2>
         </div>
 
-        <ol className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
           {STEPS.map((step, i) => {
             const Glyph = step.icon;
             return (
               <li
                 key={step.title}
-                className="relative rounded-2xl border border-border bg-surface p-6 text-center"
+                // Four centred cards is four screenfuls of mostly padding on
+                // a phone: each is ~220px tall to hold an icon and two short
+                // lines, so the section costs ~900px of scrolling to say four
+                // words. Below `sm` the same card lies down — icon at the left,
+                // text beside it — which is the shape a step in a list actually
+                // has, and puts the icon next to the words it belongs to rather
+                // than above them (CRAP proximity). `sm:block` + `sm:contents`
+                // hands the desktop layout back untouched.
+                className="relative flex gap-4 rounded-2xl border border-border bg-surface p-4 text-left sm:block sm:p-6 sm:text-center"
               >
                 {/* Drawn icons, not emoji. An emoji is a font glyph the OS
                     chooses, so 🔍 💬 🔑 🌏 rendered as an Apple cartoon here, a
@@ -62,14 +70,16 @@ export function HowItWorks() {
                     each card was the one element that looked different on every
                     machine, against a brand that is otherwise all traced vector
                     (CRAP repetition, Nielsen #2 consistency). */}
-                <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand/15 text-accent">
-                  <Glyph className="h-7 w-7" />
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand/15 text-accent sm:mx-auto sm:mb-4 sm:h-14 sm:w-14">
+                  <Glyph className="h-6 w-6 sm:h-7 sm:w-7" />
                 </span>
-                <div className="mb-1 text-sm font-semibold tabular-nums text-accent">
-                  Step 0{i + 1}
+                <div className="min-w-0 sm:contents">
+                  <div className="mb-1 text-sm font-semibold tabular-nums text-accent">
+                    Step 0{i + 1}
+                  </div>
+                  <h3 className="mb-1.5 text-lg font-semibold sm:mb-2">{step.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted">{step.body}</p>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold">{step.title}</h3>
-                <p className="text-sm leading-relaxed text-muted">{step.body}</p>
 
                 {/* Connector arrow between steps on wide screens */}
                 {i < STEPS.length - 1 && (
@@ -85,7 +95,7 @@ export function HowItWorks() {
           })}
         </ol>
 
-        <p className="mt-12 text-center">
+        <p className="mt-8 text-center lg:mt-12">
           <Link
             href="/how-it-works"
             className="inline-flex items-center gap-1.5 font-semibold text-accent transition hover:text-brand"

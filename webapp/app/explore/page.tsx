@@ -92,9 +92,13 @@ export default async function ExplorePage({
       <HomeSearchProvider destinations={destinations} initialValues={initialValues} live>
         <Navigation />
 
-        <section className="max-w-7xl mx-auto px-6 pt-14 pb-20">
-          <header className="mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold">Explore homes</h1>
+        <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">
+          {/* The page title is 40px of "Explore homes" above a screen whose job
+              is to show homes. On a phone it and its margin cost ~100px before
+              the search bar even starts, so it steps down a size and loses half
+              its air below `lg` (Nielsen #9). Unchanged on desktop. */}
+          <header className="mb-5 lg:mb-8">
+            <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">Explore homes</h1>
           </header>
 
           <ExploreView houses={houses} initial={initial} />

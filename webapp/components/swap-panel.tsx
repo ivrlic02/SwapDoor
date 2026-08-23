@@ -94,6 +94,12 @@ export function SwapPanel({
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"form" | "review" | "sent">("form");
   const [sheet, setSheet] = useState(false);
+  // Is the panel's own call to action on screen? On a phone the panel sits at
+  // the bottom of a very long single column, which is why <MobileBar> exists at
+  // all — but once the reader has scrolled to the panel, the bar is a second
+  // copy of a button already in front of them. This tells the bar to stand down.
+  const [ctaOnScreen, setCtaOnScreen] = useState(false);
+  const ctaEndRef = useRef<HTMLDivElement>(null);
   const [datesOpen, setDatesOpen] = useState(false);
 
   const [note, setNote] = useState("");
@@ -376,10 +382,24 @@ export function SwapPanel({
     return () => setDock(null, null);
   }, [dock.active, setDock, houseName, pillSummary, pillCta, stage, bodyProps]);
 
+  // The bottom margin is the height of the fixed bar plus a little: the
+  // sentinel has to clear the bar, or the bar would hide itself the instant it
+  // covered its own trigger and then flicker back the moment it did.
+  useEffect(() => {
+    const el = ctaEndRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setCtaOnScreen(entry.isIntersecting),
+      { rootMargin: "0px 0px -96px 0px", threshold: 0 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [stage]);
+
   return (
     <div
       id="swap-panel"
-      className="scroll-mt-24 rounded-2xl border border-border bg-surface p-6 shadow-lg shadow-black/10 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+      className="scroll-mt-24 rounded-2xl border border-border bg-surface p-5 shadow-lg shadow-black/10 sm:p-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
     >
       {/* Value is context, not the headline: SwapDoor trades homes, it doesn't
           sell nights, so the number is deliberately quieter than the action. */}
@@ -421,6 +441,12 @@ export function SwapPanel({
       ) : (
         <SwapBody variant="panel" {...bodyProps} />
       )}
+
+      {/* Watched by the observer above. Sitting immediately after the body, it
+          marks the end of the panel's own call to action — so when it is on
+          screen (and clear of where the fixed bar sits), the bar has nothing
+          left to do and takes itself away. See the note on `ctaOnScreen`. */}
+      <div ref={ctaEndRef} aria-hidden className="h-px w-full" />
 
       {stage === "form" && (
         <>
@@ -473,6 +499,7 @@ export function SwapPanel({
       </DateSheet>
 
       <MobileBar
+        hidden={ctaOnScreen}
         pricePerNight={pricePerNight}
         stage={stage}
         hasDates={Boolean(checkIn && checkOut)}
@@ -1170,6 +1197,7 @@ function DateSheet({
 // can read that state at all — as a separate component at page level it had no
 // way to know whether any dates existed.
 function MobileBar({
+  hidden,
   pricePerNight,
   stage,
   hasDates,
@@ -1180,6 +1208,8 @@ function MobileBar({
   onAddDates,
   onPropose,
 }: {
+  /** True while the panel's own CTA is on screen. See `ctaOnScreen`. */
+  hidden: boolean;
   pricePerNight: number;
   stage: "form" | "review" | "sent";
   hasDates: boolean;
@@ -1193,6 +1223,13 @@ function MobileBar({
   // The bar's whole job is to reach a control that is off screen. Once the
   // panel is showing the review or the confirmation, the control IS on screen.
   if (stage !== "form") return null;
+  // …and the same is true, on a phone, the moment the reader scrolls the panel
+  // itself into view: the page then carried "Sign in to propose a swap" as a
+  // full-width button in the panel AND "Sign in to propose" in a fixed bar
+  // 200px below it — the same action, twice, in two different wordings, which
+  // is exactly the "wonder whether different words mean the same thing" that
+  // Nielsen #2 is about. The bar is the fallback, so the bar is what yields.
+  if (hidden) return null;
 
   const action = () => {
     if (hasDates) onPropose();

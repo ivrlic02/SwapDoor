@@ -31,7 +31,15 @@ function Screen({
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-xl shadow-black/20">
-      <div className="flex items-center gap-2 border-b border-border bg-surface px-4 py-2.5">
+      {/* The window chrome — three dots and a URL — is a picture of a desktop
+          browser. It is what says "this is a screenshot of the product" to
+          someone reading on a laptop. On a phone the reader is not looking at
+          a desktop browser, so the same bar illustrates a thing that is not in
+          front of them, and spends 40px and the panel's most contrasty strip
+          doing it (Nielsen #1 — match the real world the reader is actually
+          in; #9 — nothing in a panel should compete with its content). The
+          panel keeps its frame, and drops the costume. */}
+      <div className="hidden items-center gap-2 border-b border-border bg-surface px-4 py-2.5 sm:flex">
         <span className="flex gap-1.5" aria-hidden>
           <span className="h-2.5 w-2.5 rounded-full bg-border" />
           <span className="h-2.5 w-2.5 rounded-full bg-border" />

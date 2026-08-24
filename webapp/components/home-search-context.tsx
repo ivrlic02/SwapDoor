@@ -7,22 +7,72 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Destination } from "@/lib/houses";
+import type { CountryStat, Destination } from "@/lib/houses";
+import { EMPTY_PLACE, type PlaceFilter } from "@/lib/place-filter";
 
 // `when` holds the check-in ISO date and `checkout` the check-out ISO date (a
 // range, Airbnb-style); `stay` holds a duration preset token ("weekend" |
 // "week" | "2weeks" | "flexible"). Dates and a preset are mutually exclusive.
+// `where` is the LABEL — what the bar, the docked pill and the active-filter
+// chip display, and the only part of the destination that has ever existed.
+// The three `where*` fields beside it are set when a row is picked out of the
+// panel rather than typed, and they are what makes an empty result recoverable:
+// with only a label, a search for a city nobody hosts in could say nothing more
+// useful than "no homes match your filters" (Lecture 3, the Gulf of
+// Evaluation). Typing clears them again, because free text is not a pick.
+//
+// All four are strings so the whole search still round-trips through the URL
+// without an encoding scheme (`?q=&city=&country=&cc=`).
 export type SearchValues = {
   where: string;
+  whereCity: string;
+  whereCountry: string;
+  whereCC: string;
   when: string;
   checkout: string;
   stay: string;
   who: string;
 };
 
+/** The destination half of a search, in the shape lib/place-filter.ts matches on. */
+export function placeOf(v: SearchValues): PlaceFilter {
+  return {
+    text: v.where.trim(),
+    city: v.whereCity.trim(),
+    country: v.whereCountry.trim(),
+    countryCode: v.whereCC.trim(),
+  };
+}
+
+/** Clearing the destination has to clear all four fields, never just the label. */
+export const CLEARED_PLACE: Pick<
+  SearchValues,
+  "where" | "whereCity" | "whereCountry" | "whereCC"
+> = { where: "", whereCity: "", whereCountry: "", whereCC: "" };
+
+/** A picked row → the four fields. `EMPTY_PLACE` keeps the import honest. */
+export function placeValues(p: Partial<PlaceFilter> & { text: string }) {
+  const full = { ...EMPTY_PLACE, ...p };
+  return {
+    where: full.text,
+    whereCity: full.city,
+    whereCountry: full.country,
+    whereCC: full.countryCode,
+  };
+}
+
 // Guests start at "Any" (empty = no constraint, shows every home). The stepper
 // then goes 1, 2, … — never a meaningless "0 guests".
-const EMPTY: SearchValues = { where: "", when: "", checkout: "", stay: "", who: "" };
+const EMPTY: SearchValues = {
+  where: "",
+  whereCity: "",
+  whereCountry: "",
+  whereCC: "",
+  when: "",
+  checkout: "",
+  stay: "",
+  who: "",
+};
 
 type HomeSearchCtx = {
   /** True only when a provider is mounted (i.e. on the home page). Lets the
@@ -34,6 +84,8 @@ type HomeSearchCtx = {
   committed: SearchValues;
   /** Real destinations (city + swap count) for the "Where" popover. */
   destinations: Destination[];
+  /** Every country with a home in it — the panel's country shortcut rows. */
+  countries: CountryStat[];
   /** Hero search bar has scrolled out of view → dock the compact pill. */
   collapsed: boolean;
   /** The docked pill's drop-down row is open. */
@@ -65,6 +117,7 @@ const HomeSearchContext = createContext<HomeSearchCtx>({
   values: EMPTY,
   committed: EMPTY,
   destinations: [],
+  countries: [],
   collapsed: false,
   expanded: false,
   live: false,
@@ -86,11 +139,13 @@ export function useHomeSearch() {
 export function HomeSearchProvider({
   children,
   destinations = [],
+  countries = [],
   initialValues,
   live = false,
 }: {
   children: ReactNode;
   destinations?: Destination[];
+  countries?: CountryStat[];
   /** Seed the bar from the URL (used on /explore so a shared link or the Hero
    *  search lands with Where/When/Who already filled). Home passes none. */
   initialValues?: Partial<SearchValues>;
@@ -145,6 +200,7 @@ export function HomeSearchProvider({
     values,
     committed,
     destinations,
+    countries,
     collapsed,
     expanded,
     live,

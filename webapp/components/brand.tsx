@@ -84,7 +84,7 @@ export function MascotGlyph({ className = "" }: { className?: string }) {
       focusable="false"
     >
       <path d={MASCOT_BODY} fillRule="evenodd" fill="var(--color-brand)" />
-      <path d={MASCOT_DOOR} fill="var(--color-accent)" />
+      <path d={MASCOT_DOOR} fill="var(--color-door)" />
       <circle
         cx={MASCOT_KNOB.cx}
         cy={MASCOT_KNOB.cy}

@@ -399,7 +399,7 @@ export function SwapPanel({
   return (
     <div
       id="swap-panel"
-      className="scroll-mt-24 rounded-2xl border border-border bg-surface p-5 shadow-lg shadow-black/10 sm:p-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+      className="scroll-mt-24 rounded-2xl border border-border bg-surface p-5 shadow-lg shadow-shade/10 sm:p-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
     >
       {/* Value is context, not the headline: SwapDoor trades homes, it doesn't
           sell nights, so the number is deliberately quieter than the action. */}
@@ -1165,7 +1165,7 @@ function DateSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Choose your swap dates"
-        className="swap-sheet absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-border bg-surface p-4 pb-6 shadow-2xl shadow-black/50"
+        className="swap-sheet absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-border bg-surface p-4 pb-6 shadow-2xl shadow-shade/50"
       >
         {/* The grab handle is the signifier that this panel came up from the
             bottom edge and goes back down there. */}

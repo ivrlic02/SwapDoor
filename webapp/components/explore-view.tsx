@@ -26,7 +26,22 @@ import { HouseCard } from "@/components/house-card";
 import { MascotGlyph } from "@/components/brand";
 import { CloseIcon, SlidersIcon } from "@/components/icons";
 import { SearchFields } from "@/components/search-fields";
-import { useHomeSearch, whenSummary } from "@/components/home-search-context";
+import {
+  CLEARED_PLACE,
+  placeOf,
+  placeValues,
+  useHomeSearch,
+  whenSummary,
+} from "@/components/home-search-context";
+import {
+  countryLabel,
+  hasCountry,
+  isPlaceSet,
+  placeLabel,
+  placeMatches,
+  type PlaceFilter,
+  type PlaceScope,
+} from "@/lib/place-filter";
 import { buttonClass } from "@/components/button";
 import { Select } from "@/components/select";
 import { MapSkeleton } from "@/components/skeletons";
@@ -150,6 +165,12 @@ export function ExploreView({
   // date must fall inside the window, and a duration preset (`stay`) requires
   // the window to be at least that long. "flexible" imposes no constraint.
   const q = values.where.trim();
+  // The destination, with whatever the "Where" panel managed to keep hold of.
+  // Free typing leaves city/country/code empty and matching falls back to text;
+  // a picked row carries all three, which is what lets an empty result widen to
+  // the country instead of ending there (see <NoHomesHere>).
+  const place = placeOf(values);
+  const placeSet = isPlaceSet(place);
   const guests = Number(values.who) || 0;
   const when = values.when;
   const checkout = values.checkout;
@@ -189,6 +210,12 @@ export function ExploreView({
   useEffect(() => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    // The pick's three extra fields ride along so a shared or refreshed link
+    // still knows which country to widen to. Absent after free typing, which is
+    // the honest signal that there is nothing to widen to.
+    if (place.city) params.set("city", place.city);
+    if (place.country) params.set("country", place.country);
+    if (place.countryCode) params.set("cc", place.countryCode);
     if (guests > 0) params.set("guests", String(guests));
     if (when) params.set("date", when);
     if (checkout) params.set("checkout", checkout);
@@ -205,77 +232,118 @@ export function ExploreView({
     // Remember the search for this session so a listing page's "Back to your
     // results" can restore it instead of dumping the user on an unfiltered grid.
     sessionStorage.setItem(EXPLORE_QUERY_KEY, query);
-  }, [q, guests, when, checkout, stay, maxPrice, priceActive, sort, types, amenities, minRating, verifiedOnly, view]);
+  }, [q, place.city, place.country, place.countryCode, guests, when, checkout, stay, maxPrice, priceActive, sort, types, amenities, minRating, verifiedOnly, view]);
 
-  const results = useMemo(() => {
-    const needle = q.toLowerCase();
-    const filtered = houses.filter((h) => {
-      if (needle && !`${h.name} ${h.location} ${h.country}`.toLowerCase().includes(needle))
-        return false;
-      if (guests > 0 && h.maxGuests < guests) return false;
-      if (priceActive && h.pricePerNight > maxPrice) return false;
-      // Dates: the home's availability window (`h.date`..`h.availableTo`) must
-      // cover the requested stay. A range needs the whole [check-in, check-out]
-      // to fit; a lone check-in just needs to fall inside the window.
-      if (when) {
-        const to = h.availableTo ?? h.date;
-        if (checkout) {
-          if (when < h.date || checkout > to) return false;
-        } else if (when < h.date || when > to) {
-          return false;
+  // One predicate, three place scopes.
+  //
+  // `exact` is what the user asked for; `country` keeps every other filter and
+  // relaxes only the city; `any` drops the place entirely. Explore evaluates
+  // all three so the message under an empty grid can name what it actually did
+  // — "nothing in Lisbon, and nothing in Portugal either, here is everything" —
+  // instead of the old "No homes match your filters", which was true and
+  // useless (Nielsen #1; Lecture 3, the Gulf of Evaluation). Three passes over
+  // fourteen homes costs nothing, and the alternative is a second source of
+  // truth for what a filter means.
+  const filterAt = useCallback(
+    (scope: PlaceScope) => {
+      const filtered = houses.filter((h) => {
+        if (!placeMatches(h, place, scope)) return false;
+        if (guests > 0 && h.maxGuests < guests) return false;
+        if (priceActive && h.pricePerNight > maxPrice) return false;
+        // Dates: the home's availability window (`h.date`..`h.availableTo`) must
+        // cover the requested stay. A range needs the whole [check-in, check-out]
+        // to fit; a lone check-in just needs to fall inside the window.
+        if (when) {
+          const to = h.availableTo ?? h.date;
+          if (checkout) {
+            if (when < h.date || checkout > to) return false;
+          } else if (when < h.date || when > to) {
+            return false;
+          }
         }
-      }
-      // Duration preset: the availability window must be at least this long.
-      if (stayMinDays > 0) {
-        const from = new Date(h.date).getTime();
-        const to = new Date(h.availableTo ?? h.date).getTime();
-        if (!Number.isNaN(from) && !Number.isNaN(to) && (to - from) / DAY_MS < stayMinDays)
-          return false;
-      }
-      if (types.size > 0 && (!h.type || !types.has(h.type))) return false;
-      if (minRating > 0 && h.rating < minRating) return false;
-      if (verifiedOnly && !h.verified) return false;
-      if (amenities.size > 0) {
-        const have = new Set(h.amenities ?? []);
-        for (const a of amenities) if (!have.has(a)) return false;
-      }
-      // "Search this area": keep only homes inside the map's committed bounds.
-      if (areaBounds) {
-        if (
-          typeof h.lat !== "number" ||
-          typeof h.lng !== "number" ||
-          h.lat < areaBounds.south ||
-          h.lat > areaBounds.north ||
-          h.lng < areaBounds.west ||
-          h.lng > areaBounds.east
-        )
-          return false;
-      }
-      return true;
-    });
+        // Duration preset: the availability window must be at least this long.
+        if (stayMinDays > 0) {
+          const from = new Date(h.date).getTime();
+          const to = new Date(h.availableTo ?? h.date).getTime();
+          if (!Number.isNaN(from) && !Number.isNaN(to) && (to - from) / DAY_MS < stayMinDays)
+            return false;
+        }
+        if (types.size > 0 && (!h.type || !types.has(h.type))) return false;
+        if (minRating > 0 && h.rating < minRating) return false;
+        if (verifiedOnly && !h.verified) return false;
+        if (amenities.size > 0) {
+          const have = new Set(h.amenities ?? []);
+          for (const a of amenities) if (!have.has(a)) return false;
+        }
+        // "Search this area": keep only homes inside the map's committed bounds.
+        if (areaBounds) {
+          if (
+            typeof h.lat !== "number" ||
+            typeof h.lng !== "number" ||
+            h.lat < areaBounds.south ||
+            h.lat > areaBounds.north ||
+            h.lng < areaBounds.west ||
+            h.lng > areaBounds.east
+          )
+            return false;
+        }
+        return true;
+      });
 
-    const sorted = [...filtered];
-    switch (sort) {
-      case "price-asc":
-        sorted.sort((a, b) => a.pricePerNight - b.pricePerNight);
-        break;
-      case "price-desc":
-        sorted.sort((a, b) => b.pricePerNight - a.pricePerNight);
-        break;
-      case "rating":
-        sorted.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        // "Recommended": verified hosts first, then highest-rated. JS sort is
-        // stable, so homes that tie keep their original (source) order.
-        sorted.sort((a, b) => {
-          if (!!a.verified !== !!b.verified) return a.verified ? -1 : 1;
-          return b.rating - a.rating;
-        });
-        break;
-    }
-    return sorted;
-  }, [houses, q, guests, when, checkout, stayMinDays, maxPrice, priceActive, types, minRating, verifiedOnly, amenities, sort, areaBounds]);
+      const sorted = [...filtered];
+      switch (sort) {
+        case "price-asc":
+          sorted.sort((a, b) => a.pricePerNight - b.pricePerNight);
+          break;
+        case "price-desc":
+          sorted.sort((a, b) => b.pricePerNight - a.pricePerNight);
+          break;
+        case "rating":
+          sorted.sort((a, b) => b.rating - a.rating);
+          break;
+        default:
+          // "Recommended": verified hosts first, then highest-rated. JS sort is
+          // stable, so homes that tie keep their original (source) order.
+          sorted.sort((a, b) => {
+            if (!!a.verified !== !!b.verified) return a.verified ? -1 : 1;
+            return b.rating - a.rating;
+          });
+          break;
+      }
+      return sorted;
+    },
+    // `place` is rebuilt every render, so its four strings are the dependencies
+    // rather than the object — otherwise this memo would never hit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [houses, place.text, place.city, place.country, place.countryCode, guests, when, checkout, stayMinDays, maxPrice, priceActive, types, minRating, verifiedOnly, amenities, sort, areaBounds]
+  );
+
+  const results = useMemo(() => filterAt("exact"), [filterAt]);
+
+  // Does this destination have homes AT ALL, ignoring every other filter?
+  //
+  // This is what stops the empty state blaming the wrong thing. Search
+  // Santorini with a $100 budget and there genuinely is a home in Santorini —
+  // the price is the blocker, and "no homes in Santorini yet" would be a false
+  // statement offering a useless remedy. Widening only makes sense when the
+  // place itself is the thing SwapDoor does not have.
+  const placeHasHomes = useMemo(
+    () => placeSet && houses.some((h) => placeMatches(h, place, "exact")),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [houses, placeSet, place.text, place.city, place.country, place.countryCode]
+  );
+
+  // Only computed when they are about to be needed — an empty grid whose cause
+  // is the destination. Everywhere else these are two empty arrays and no work.
+  const showWidening = results.length === 0 && placeSet && !placeHasHomes;
+  const inCountry = useMemo(
+    () => (showWidening && hasCountry(place) ? filterAt("country") : []),
+    [showWidening, filterAt, place]
+  );
+  const anywhere = useMemo(
+    () => (showWidening ? filterAt("any") : []),
+    [showWidening, filterAt]
+  );
 
   // Signature of the *non-spatial* filters. The map re-fits its view only when
   // this changes (a real filter changed), so panning or a "search this area"
@@ -337,6 +405,31 @@ export function ExploreView({
     setAreaBounds(null);
   }
 
+  // What goes where the grid would have been when nothing matched. A place in
+  // the box gets the widening block; anything else keeps the original message,
+  // because with no destination the filters really are the whole story.
+  const nothingFound = showWidening ? (
+    <NoHomesHere
+      place={place}
+      inCountry={inCountry}
+      anywhere={anywhere}
+      onSearchCountry={() =>
+        setValues(
+          placeValues({
+            text: countryLabel(place),
+            city: "",
+            country: place.country,
+            countryCode: place.countryCode,
+          })
+        )
+      }
+      onClearPlace={() => setValues(CLEARED_PLACE)}
+      onReset={clearAll}
+    />
+  ) : (
+    <EmptyState onReset={clearAll} where={placeHasHomes ? placeLabel(place) : ""} />
+  );
+
   const ratingLabel = RATING_OPTIONS.find((r) => r.v === minRating)?.label ?? "Rating";
 
   // Percentage of the budget slider that's "filled" (blue), for the WebKit
@@ -351,7 +444,14 @@ export function ExploreView({
   // each can be undone on its own (user control & freedom, #4). Sort is ordering,
   // not a filter, so it isn't chipped.
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
-  if (q) activeChips.push({ key: "where", label: q, onRemove: () => setValues({ where: "" }) });
+  if (q)
+    activeChips.push({
+      key: "where",
+      label: q,
+      // All four destination fields, or the next empty result would widen to a
+      // country the user has already dismissed.
+      onRemove: () => setValues(CLEARED_PLACE),
+    });
   if (whenActive)
     activeChips.push({
       key: "when",
@@ -464,9 +564,20 @@ export function ExploreView({
 
       {/* RESULT COUNT + CLEAR */}
       <div className="flex items-center justify-between gap-4 mt-6 mb-6">
+        {/* Silent while the widening block is up. "Showing 0 of 14 homes"
+            directly above a grid of six home cards is the status line
+            contradicting the screen — and the block below already says the same
+            thing, more precisely and beside the thing it describes (CRAP
+            proximity; and "twice on one card is noise, not emphasis"). The
+            live region moves down there with it, so assistive tech still gets
+            exactly one announcement. */}
         <p className="text-muted text-sm" aria-live="polite">
-          Showing <span className="text-fg font-semibold">{results.length}</span> of{" "}
-          {houses.length} homes
+          {showWidening ? null : (
+            <>
+              Showing <span className="text-fg font-semibold">{results.length}</span> of{" "}
+              {houses.length} homes
+            </>
+          )}
         </p>
         {anyFilter && (
           <button
@@ -501,7 +612,7 @@ export function ExploreView({
                 ))}
               </div>
             ) : (
-              <EmptyState onReset={clearAll} />
+              nothingFound
             )}
           </div>
 
@@ -524,8 +635,116 @@ export function ExploreView({
           ))}
         </div>
       ) : (
-        <EmptyState onReset={clearAll} />
+        nothingFound
       )}
+    </div>
+  );
+}
+
+// Nothing here — so say where "here" was, and offer the next-widest thing that
+// isn't empty.
+//
+// What this replaces: an empty grid, a faded mascot and "No homes match your
+// filters". Every word of that was true and none of it was useful. The panel
+// above had just told the user Lisbon exists (it reads the whole `cities`
+// table, 50k rows, precisely so that typing a real place never looks like a
+// broken search) and then the results said nothing about Lisbon at all — the
+// system answering in its own terms rather than the user's (Nielsen #1), and a
+// textbook Gulf of Evaluation: the action was performed, the outcome was
+// visible, and it could not be interpreted (Lecture 3).
+//
+// The widening is stepwise and each step is named, because a search that
+// quietly returns something other than what was asked for is worse than one
+// that returns nothing:
+//
+//   1. the same country      — "No homes in Lisbon yet. 2 homes in Portugal."
+//   2. everywhere            — "…and none in Portugal either. All 14 homes:"
+//   3. nothing even then     — the other filters are the problem, so hand back
+//                              the original message rather than inventing one.
+//
+// Both exits are real controls rather than a single "reset everything": the
+// country search commits the widening as a normal filter (so it lands in the
+// URL and in a removable chip, and the back button undoes it), and clearing
+// the place leaves the dates and price the user also chose alone — a "Reset
+// filters" button that silently dropped those would be the same
+// label-vs-behaviour fault this pass exists to remove (Nielsen #2, #4).
+function NoHomesHere({
+  place,
+  inCountry,
+  anywhere,
+  onSearchCountry,
+  onClearPlace,
+  onReset,
+}: {
+  place: PlaceFilter;
+  inCountry: House[];
+  anywhere: House[];
+  onSearchCountry: () => void;
+  onClearPlace: () => void;
+  onReset: () => void;
+}) {
+  const here = placeLabel(place);
+  const country = countryLabel(place);
+  const widened = inCountry.length > 0 ? inCountry : anywhere;
+  const level: "country" | "any" | "none" =
+    inCountry.length > 0 ? "country" : anywhere.length > 0 ? "any" : "none";
+
+  // Step 3: the destination was never the reason. Say so instead of listing
+  // homes the user has already filtered out.
+  if (level === "none") return <EmptyState onReset={onReset} />;
+
+  return (
+    <div>
+      <div className="mb-6 rounded-2xl border border-border bg-surface/60 px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <MascotGlyph className="hidden h-14 w-auto shrink-0 opacity-30 sm:block" />
+            <div className="min-w-0">
+              <p className="text-lg font-semibold">No homes in {here} yet</p>
+              <p className="mt-1 text-muted" aria-live="polite">
+                {level === "country" ? (
+                  <>
+                    Nobody is offering a swap there right now — here{" "}
+                    {inCountry.length === 1 ? "is" : "are"}{" "}
+                    <strong className="font-semibold text-fg">
+                      {inCountry.length} {inCountry.length === 1 ? "home" : "homes"}
+                    </strong>{" "}
+                    in {country} instead.
+                  </>
+                ) : (
+                  <>
+                    Nobody is offering a swap there
+                    {place.countryCode || place.country ? <> or anywhere else in {country}</> : null}{" "}
+                    right now — here {anywhere.length === 1 ? "is" : "are"} all{" "}
+                    <strong className="font-semibold text-fg">{anywhere.length}</strong> that match
+                    the rest of your search.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {level === "country" && (
+              <button
+                type="button"
+                onClick={onSearchCountry}
+                className={buttonClass("primary", "md")}
+              >
+                Search all of {country}
+              </button>
+            )}
+            <button type="button" onClick={onClearPlace} className={buttonClass("secondary", "md")}>
+              {level === "country" ? "Anywhere" : "Clear destination"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {widened.slice(0, 6).map((house, i) => (
+          <HouseCard key={house.id} house={house} priority={i < 3} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -536,11 +755,18 @@ export function ExploreView({
 // site broken, or did I over-filter?"), and a piece of the brand answering it
 // says the page rendered fine — while staying quiet enough that the sentence
 // and the reset button are still what the eye lands on first.
-function EmptyState({ onReset }: { onReset: () => void }) {
+function EmptyState({ onReset, where = "" }: { onReset: () => void; where?: string }) {
   return (
     <div className="border border-border rounded-2xl bg-surface/60 py-16 px-6 text-center">
       <MascotGlyph className="mx-auto mb-6 h-20 w-auto opacity-30" />
-      <p className="text-lg font-semibold">No homes match your filters</p>
+      {/* Naming the destination matters when there IS one and it is not the
+          problem: SwapDoor has a home in Santorini, it just costs more than the
+          budget on the slider. Saying "no homes in Santorini" there would be
+          false, and pointing at the destination would send the user to fix the
+          one thing that was already right (Nielsen #1, #6). */}
+      <p className="text-lg font-semibold">
+        {where ? `No homes in ${where} match your filters` : "No homes match your filters"}
+      </p>
       <p className="text-muted mt-2">Try widening your dates, price, or guest count.</p>
       <button type="button" onClick={onReset} className={`mt-5 ${buttonClass("primary")}`}>
         Reset filters
@@ -921,7 +1147,7 @@ function FilterSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Filters"
-        className="swap-sheet absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-3xl border-t border-border bg-surface shadow-2xl shadow-black/50"
+        className="swap-sheet absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-3xl border-t border-border bg-surface shadow-2xl shadow-shade/50"
       >
         <div className="shrink-0 px-4 pt-3">
           <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" />
@@ -1155,7 +1381,7 @@ function PillPopover({
     <div
       data-pill-popover
       style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-      className="z-[60] max-h-[70vh] overflow-auto rounded-2xl border border-border bg-surface p-3 shadow-2xl shadow-black/50"
+      className="z-[60] max-h-[70vh] overflow-auto rounded-2xl border border-border bg-surface p-3 shadow-2xl shadow-shade/50"
     >
       {children}
     </div>,

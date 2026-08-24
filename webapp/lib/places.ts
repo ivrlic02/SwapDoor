@@ -22,6 +22,7 @@
 // rate limit, and silently null whenever it failed) is now only needed for a
 // place someone typed freehand.
 
+import { normalizePlaceQuery } from "@/lib/place-filter";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -50,30 +51,12 @@ export type GlobalCity = City & {
   emoji: string;
 };
 
-/**
- * Lowercase, strip the diacritics, drop the apostrophes.
- *
- * The same normalisation runs in scripts/build-places-seed.mjs over the stored
- * `search_name`, so "Malmö", "malmo" and "MALMO" all meet in the middle. Doing
- * it here rather than in Postgres keeps the query a plain LIKE, which the
- * trigram index can serve — `unaccent()` is not IMMUTABLE and so cannot be
- * indexed, and wrapping it would mean a function nobody would remember exists.
- */
-export function normalizePlaceQuery(input: string): string {
-  return input
-    .replace(/[đĐ]/g, "d")
-    .replace(/[øØ]/g, "o")
-    .replace(/[łŁ]/g, "l")
-    .replace(/ß/g, "ss")
-    .replace(/[æÆ]/g, "ae")
-    .replace(/[œŒ]/g, "oe")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/['’`ʻʼ]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
+// The normalisation rule lives in lib/place-filter.ts, which is pure — the
+// Explore grid and the home map need the same folding to match a destination
+// and must not pull this file's Supabase client in to get it. Re-exported here
+// so every existing `import { normalizePlaceQuery } from "@/lib/places"` keeps
+// working and there is still exactly one rule (same split as house-types.ts).
+export { normalizePlaceQuery } from "@/lib/place-filter";
 
 // A tiny in-memory cache. The country list barely changes within a session and
 // the same few city queries get retyped constantly (backspace one letter and

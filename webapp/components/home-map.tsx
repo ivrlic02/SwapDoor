@@ -5,12 +5,18 @@ import Link from "next/link";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { House } from "@/lib/houses";
+import { isPlaceSet, placeMatches, type PlaceFilter } from "@/lib/place-filter";
 import { buttonClass } from "@/components/button";
+import { LocateIcon } from "@/components/icons";
+import { addBasemap } from "@/components/map-basemap";
 
 // Leaflet renders tiles as plain <img> DOM elements (no WebGL), so it displays
 // in every browser/preview — unlike a GL map, which needs WebGL. Tiles are
-// CARTO's "Dark Matter" basemap so the map sits on our dark theme instead of
-// being a bright island (consistent with the Explore map, Nielsen #2).
+// CARTO's basemap, in whichever of its two lightnesses the current theme calls
+// for, so the map sits on the theme instead of being a bright (or, in light
+// mode, a black) island. The choice and the theme listener live once in
+// components/map-basemap.ts, shared with the Explore and listing maps
+// (Nielsen #2).
 // Pin is an inline SVG divIcon; fill + selected bounce are driven by CSS (see
 // globals.css) so we can theme with tokens. A selected/searched pin is larger,
 // a different colour, and springs.
@@ -31,14 +37,14 @@ function pinIcon(selected: boolean) {
 export default function HomeMap({
   houses,
   // Driven by the hero search above — the map has no search box of its own.
-  query,
+  place,
   guests,
   whenLabel,
   onClear,
   exploreHref,
 }: {
   houses: House[];
-  query: string;
+  place: PlaceFilter;
   guests: number;
   whenLabel: string;
   onClear: () => void;
@@ -61,19 +67,30 @@ export default function HomeMap({
     [houses]
   );
 
-  // The search actually drives the map: destination text *and* guest capacity.
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return mappable.filter((h) => {
-      const matchesText = !q || `${h.name} ${h.location} ${h.country}`.toLowerCase().includes(q);
-      const fitsGuests = guests <= 0 || h.maxGuests >= guests;
-      return matchesText && fitsGuests;
-    });
-  }, [mappable, query, guests]);
+  // The search actually drives the map: destination *and* guest capacity. The
+  // destination goes through the same matcher Explore uses (lib/place-filter),
+  // so a picked city means the same thing on both screens — it used to be an
+  // `includes()` over `${name} ${location} ${country}` here and an identical
+  // copy over there, two places to keep in step and one of them always about
+  // to be forgotten (Nielsen #2).
+  const filtered = useMemo(
+    () =>
+      mappable.filter(
+        (h) => placeMatches(h, place, "exact") && (guests <= 0 || h.maxGuests >= guests)
+      ),
+    // The four strings, not the object: `place` is rebuilt on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mappable, place.text, place.city, place.country, place.countryCode, guests]
+  );
+
+  // Derived out here rather than inside the highlight effect below: the effect
+  // needs the boolean, not the object, and depending on a `place` rebuilt every
+  // render would re-run it every render.
+  const searchActive = isPlaceSet(place);
 
   // Everything the user committed, so the map makes the active search visible.
   const criteria = [
-    query.trim(),
+    place.text.trim(),
     whenLabel,
     guests > 0 ? `${guests} guest${guests > 1 ? "s" : ""}` : "",
   ].filter(Boolean);
@@ -92,11 +109,7 @@ export default function HomeMap({
     // Clicking empty map (not a pin) clears the selection.
     map.on("click", () => setSelectedId(null));
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
-    }).addTo(map);
+    const unfollowTheme = addBasemap(map);
 
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
@@ -105,6 +118,7 @@ export default function HomeMap({
     setTimeout(() => map.invalidateSize(), 120);
 
     return () => {
+      unfollowTheme();
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
@@ -149,12 +163,11 @@ export default function HomeMap({
   // the icon (→ different colour + larger), which replays the bounce, and opens
   // the popup for a clicked pin. Runs on selection/search change — no re-fit.
   useEffect(() => {
-    const queryActive = query.trim() !== "";
     markersById.current.forEach((marker, id) => {
-      marker.setIcon(pinIcon(id === selectedId || queryActive));
+      marker.setIcon(pinIcon(id === selectedId || searchActive));
     });
     if (selectedId != null) markersById.current.get(selectedId)?.openPopup();
-  }, [filtered, selectedId, query]);
+  }, [filtered, selectedId, searchActive]);
 
   function locateMe() {
     if (!("geolocation" in navigator)) {
@@ -232,7 +245,17 @@ export default function HomeMap({
             disabled={locating}
             className={buttonClass("secondary", "md", "flex-1 py-3 sm:flex-none sm:py-2.5")}
           >
-            {locating ? "Locating…" : "📍 Use my location"}
+            {locating ? (
+              "Locating…"
+            ) : (
+              <>
+                {/* Was a raw 📍. Same defect the icon set was written to fix:
+                    an OS-drawn glyph as the most prominent mark on a control,
+                    beside a page that is otherwise all traced vector. */}
+                <LocateIcon aria-hidden className="mr-1.5 inline size-4 align-[-2px]" />
+                Use my location
+              </>
+            )}
           </button>
           <Link href={exploreHref} className={buttonClass("primary", "md", "flex-1 py-3 sm:flex-none sm:py-2.5")}>
             See all as a list →

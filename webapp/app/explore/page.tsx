@@ -5,6 +5,7 @@ import { ExploreView, type ExploreInitial } from "@/components/explore-view";
 import { HomeSearchProvider } from "@/components/home-search-context";
 import {
   getHouses,
+  topCountries,
   topDestinations,
   HOME_TYPES,
   AMENITIES,
@@ -44,6 +45,12 @@ function parseSearchValues(sp: Record<string, string | string[] | undefined>) {
   const guests = num(sp.guests);
   return {
     where: str(sp.q) || "",
+    // The three fields a picked row carries. Present only when the search came
+    // from the "Where" panel rather than from free typing — which is exactly
+    // when an empty result has a country it can widen to.
+    whereCity: str(sp.city) || "",
+    whereCountry: str(sp.country) || "",
+    whereCC: (str(sp.cc) || "").toUpperCase(),
     when: str(sp.date) || "",
     checkout: str(sp.checkout) || "",
     stay: str(sp.stay) || "",
@@ -82,14 +89,21 @@ export default async function ExplorePage({
   const [houses, sp] = await Promise.all([getHouses(), searchParams]);
   const initial = parseInitial(sp);
   const initialValues = parseSearchValues(sp);
-  const destinations = topDestinations(houses);
+  // Uncapped for the same reason as on the home page — see the note there.
+  const destinations = topDestinations(houses, Infinity);
+  const countries = topCountries(houses);
 
   return (
     <main className="bg-bg min-h-screen text-fg">
       {/* Nav sits *inside* the provider (like the home page) so it can dock the
           search+filters pill in its own centre slot when the controls scroll
           away. `live` keeps the pill in sync with the as-you-type filtering. */}
-      <HomeSearchProvider destinations={destinations} initialValues={initialValues} live>
+      <HomeSearchProvider
+        destinations={destinations}
+        countries={countries}
+        initialValues={initialValues}
+        live
+      >
         <Navigation />
 
         <section className="max-w-7xl mx-auto px-4 pt-8 pb-14 sm:px-6 lg:pt-14 lg:pb-20">

@@ -18,7 +18,7 @@ export function HouseCard({ house, priority = false }: { house: House; priority?
   const href = `/explore/${house.id}`;
 
   return (
-    <div className="group relative bg-surface border border-border rounded-2xl overflow-hidden transition duration-200 hover:border-brand hover:shadow-lg hover:shadow-black/20 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-brand">
+    <div className="group relative bg-surface border border-border rounded-2xl overflow-hidden transition duration-200 hover:border-brand hover:shadow-lg hover:shadow-shade/20 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-brand">
       <CardGallery
         images={images}
         alt={`${house.name} in ${house.location}, ${house.country}`}

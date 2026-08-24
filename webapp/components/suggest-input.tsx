@@ -228,7 +228,7 @@ export function SuggestInput({
       </button>
 
       {showPanel && (matches.length > 0 || loading || value.trim().length > 0) && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl shadow-black/50">
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl shadow-shade/50">
           <ul id={listId} role="listbox" className="max-h-64 overflow-auto p-1">
             {matches.map((s, i) => (
               <li

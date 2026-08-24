@@ -5,6 +5,7 @@ import { RouteProgress } from "@/components/route-progress";
 import { SavedProvider } from "@/components/saved-context";
 import { ProfileProvider } from "@/components/profile-context";
 import { SwapsProvider } from "@/components/swaps-context";
+import { DEFAULT_THEME, THEME_BOOTSTRAP } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,7 +69,28 @@ export default function RootLayout({
     // attribute is present. Without it, the smooth scroll the footer's "Back to
     // top" link wants would also apply to every route change, animating the
     // jump to the top of each new page.
-    <html lang="en" data-scroll-behavior="smooth">
+    // `data-theme` is the switch the whole palette hangs off (see the light
+    // block in app/globals.css). It is rendered with the site's default, so the
+    // prerendered HTML is complete and correct on its own — `/` stays static and
+    // the page is right with JavaScript off. `suppressHydrationWarning` is here
+    // because the script below may have changed it before React ever ran: React
+    // then keeps the DOM instead of treating the difference as a hydration error
+    // and re-rendering from the nearest boundary.
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      data-theme={DEFAULT_THEME}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Runs synchronously while the browser parses the head — before the
+            first paint, and long before React exists. That ordering is the
+            entire reason it is an inline script and not an effect: a
+            useLayoutEffect runs after hydration, so on a slow connection the
+            visitor would see a full dark page repaint to light. Source and
+            reasoning live in lib/theme.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       {/* `id="top"` is the target of that link. A plain fragment anchor means
           the control is real HTML: no client component, no JavaScript, and it
           still works if the bundle fails to load. */}

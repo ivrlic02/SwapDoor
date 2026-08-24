@@ -7,6 +7,7 @@ import { Avatar, initials } from "@/components/avatar";
 import { useProfile } from "@/components/profile-context";
 import { useSaved } from "@/components/saved-context";
 import { useSwaps } from "@/components/swaps-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/client";
 
 // The signed-in account control in the navbar. Replaces the old
@@ -152,7 +153,7 @@ export function UserMenu() {
               moveFocus(-1);
             }
           }}
-          className="absolute right-0 top-[calc(100%+0.6rem)] w-72 origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 motion-safe:animate-[menu-in_140ms_cubic-bezier(0.16,1,0.3,1)]"
+          className="absolute right-0 top-[calc(100%+0.6rem)] w-72 origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-shade/40 motion-safe:animate-[menu-in_140ms_cubic-bezier(0.16,1,0.3,1)]"
         >
           {/* Identity header — the email lives here now, next to the name it
               belongs to, instead of taking up the navbar. */}
@@ -182,6 +183,17 @@ export function UserMenu() {
               )}
             </Section>
           ))}
+
+          {/* Appearance. It sits in its own section between "my stuff" and the
+              exit, for the same reason the admin row does: everything above is
+              a place to go, and this is a setting. It is deliberately NOT a
+              `data-menu-item` — the arrow keys rove between the menu's
+              destinations, and a two-button control inside that roving order
+              would make ArrowDown mean two different things depending on where
+              you already were. Tab still reaches it, in reading order. */}
+          <Section>
+            <ThemeToggle label="Appearance" className="px-2.5 py-1.5" />
+          </Section>
 
           <div className="p-1.5">
             <button

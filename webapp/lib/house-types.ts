@@ -9,6 +9,12 @@ export type House = {
   name: string;
   location: string;
   country: string;
+  // ISO 3166-1 alpha-2, from `houses.country_code` (added 2026-08-21 and until
+  // now unused by any UI). It is what the "Where" search widens on when a
+  // destination has no homes: country *names* disagree across sources — this
+  // table says "USA" where the gazetteer says "United States" — and a code does
+  // not. Absent on the gist fallback path, so every use must tolerate it.
+  countryCode?: string;
   date: string;
   maxGuests: number;
   pricePerNight: number;

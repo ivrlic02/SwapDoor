@@ -60,7 +60,7 @@ export function VideoEmbed({
             />
             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent transition group-hover:from-black/60" />
             <span className="absolute inset-0 flex items-center justify-center">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand/90 text-white shadow-lg shadow-black/40 transition group-hover:scale-110 group-hover:bg-brand">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand/90 text-white shadow-lg shadow-shade/40 transition group-hover:scale-110 group-hover:bg-brand">
                 <PlayIcon className="h-9 w-9 translate-x-[1px]" />
               </span>
             </span>

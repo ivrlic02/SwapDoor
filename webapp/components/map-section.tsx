@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { House } from "@/lib/houses";
+import type { PlaceFilter } from "@/lib/place-filter";
 import { MapSkeleton } from "@/components/skeletons";
 
 // Leaflet touches `window`/`document`, so the map is loaded client-side only.
@@ -13,14 +14,14 @@ const HomeMap = dynamic(() => import("./home-map"), {
 
 export function MapSection({
   houses,
-  query,
+  place,
   guests,
   whenLabel,
   onClear,
   exploreHref,
 }: {
   houses: House[];
-  query: string;
+  place: PlaceFilter;
   guests: number;
   whenLabel: string;
   onClear: () => void;
@@ -35,7 +36,7 @@ export function MapSection({
         </p>
         <HomeMap
           houses={houses}
-          query={query}
+          place={place}
           guests={guests}
           whenLabel={whenLabel}
           onClear={onClear}

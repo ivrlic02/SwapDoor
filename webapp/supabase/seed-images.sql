@@ -4,6 +4,14 @@
 -- with the dead-photo replacements already applied), then 3 verified interior
 -- shots from a shared pool. Every URL was confirmed to return HTTP 200.
 -- Re-runnable: it simply overwrites houses.images.
+--
+-- SUPERSEDED ON THE LIVE PROJECT (2026-08-23). This file still writes
+-- images.unsplash.com URLs, and it stays that way on purpose: a freshly created
+-- project has empty Storage buckets, so it needs a source of photos to bootstrap
+-- from. Once it has run, `node scripts/seed-storage-media.mjs` copies each photo
+-- into the project's own `house-photos` bucket and repoints these same rows at
+-- it, so nothing on a listing page is hotlinked to a third party. Run this file
+-- first, that script second — see supabase/seed-media.sql for the result.
 -- ============================================================================
 
 with pool(id, ids) as (

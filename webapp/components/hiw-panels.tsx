@@ -30,7 +30,7 @@ function Screen({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-xl shadow-black/20">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-xl shadow-shade/20">
       {/* The window chrome — three dots and a URL — is a picture of a desktop
           browser. It is what says "this is a screenshot of the product" to
           someone reading on a laptop. On a phone the reader is not looking at

@@ -170,6 +170,9 @@ type HouseRow = {
   name: string;
   location: string;
   country: string;
+  // Backfilled for all 14 rows (supabase/places.sql). Optional in the type
+  // because the gist fallback has no such field.
+  country_code?: string | null;
   date: string;
   max_guests: number;
   price_per_night: number;
@@ -216,6 +219,7 @@ function mapRow(row: HouseRow): House {
     name: row.name,
     location: row.location,
     country: row.country,
+    countryCode: row.country_code ?? undefined,
     date: row.date,
     maxGuests: row.max_guests,
     pricePerNight: row.price_per_night,
@@ -332,19 +336,75 @@ export const getHouses = cache(async (): Promise<House[]> => {
   return (data as unknown as HouseRow[]).map(mapRow);
 });
 
-export type Destination = { city: string; country: string; count: number };
+export type Destination = {
+  city: string;
+  country: string;
+  /** ISO code, so a pick can widen to its country without matching on a name. */
+  countryCode?: string;
+  count: number;
+  /** The first mapped home in this city — what "near me" measures against. */
+  lat?: number;
+  lng?: number;
+};
 
 // Group listings by city so the "Where" popover can suggest real destinations
 // with a live count of how many homes are open to swap there.
+//
+// Each entry also carries the country's ISO code and a representative point.
+// The code is what a pick hands to the filter (see lib/place-filter.ts); the
+// point is what "Near me" measures against, so that button can answer with a
+// city SwapDoor actually has homes in rather than with a radius that might
+// contain none — an empty answer to "near me" reads as a broken feature
+// (Nielsen #1), and this data was already loaded by the page.
 export function topDestinations(houses: House[], limit = 8): Destination[] {
   const byCity = new Map<string, Destination>();
   for (const h of houses) {
     const key = `${h.location}|${h.country}`;
     const existing = byCity.get(key);
-    if (existing) existing.count += 1;
-    else byCity.set(key, { city: h.location, country: h.country, count: 1 });
+    if (existing) {
+      existing.count += 1;
+      // A city's first home may be the one without coordinates; take the first
+      // that has them rather than the first that appears.
+      if (existing.lat === undefined && typeof h.lat === "number" && typeof h.lng === "number") {
+        existing.lat = h.lat;
+        existing.lng = h.lng;
+      }
+      continue;
+    }
+    byCity.set(key, {
+      city: h.location,
+      country: h.country,
+      countryCode: h.countryCode,
+      count: 1,
+      lat: typeof h.lat === "number" ? h.lat : undefined,
+      lng: typeof h.lng === "number" ? h.lng : undefined,
+    });
   }
   return [...byCity.values()].sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
+export type CountryStat = { name: string; code?: string; count: number };
+
+// Every country SwapDoor has a home in, biggest first — the "Where" panel's
+// third way in, beside a typed city and a picked one.
+//
+// Derived from ALL houses rather than from `topDestinations`, which is capped
+// at 8 for Hick's-law reasons: a list headed "Countries with homes" that quietly
+// omitted some would be a worse claim than no list (Nielsen #1). `houses.country_code`
+// has existed and been indexed since 2026-08-21 and until now nothing read it.
+export function topCountries(houses: House[], limit = 12): CountryStat[] {
+  const byCountry = new Map<string, CountryStat>();
+  for (const h of houses) {
+    // Key on the code when there is one so "USA" and "United States" cannot
+    // split into two rows; fall back to the name for the gist path.
+    const key = h.countryCode?.toUpperCase() || h.country.toLowerCase();
+    const existing = byCountry.get(key);
+    if (existing) existing.count += 1;
+    else byCountry.set(key, { name: h.country, code: h.countryCode, count: 1 });
+  }
+  return [...byCountry.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 // A signed-in user's wishlist, newest-saved first. Uses the cookie-based

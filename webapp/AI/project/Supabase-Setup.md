@@ -62,6 +62,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR-ANON-KEY
 - The demo **hosts** and their reviews/photos are separate, optional seeds:
   `seed-hosts.mjs` (creates the auth users) then `seed-hosts.sql`, plus
   `seed-reviews.sql`, `seed-images.sql` and `seed-availability.sql`.
+- Finally, **move the demo media into Storage**:
+  `node scripts/seed-storage-media.mjs`. Up to this point every listing photo is
+  hotlinked to `images.unsplash.com` and no demo host has a picture at all. The
+  script downloads each photo, uploads it into this project's own `house-photos`
+  and `avatars` buckets as the host who owns it, gives the seven demo hosts a
+  portrait, and repoints `houses.image` / `houses.images` / `profiles.avatar_url`
+  at the uploaded files. Safe to re-run (every upload is an upsert onto a fixed
+  path); `--dry-run` reports what it would do without writing. It also emits
+  [supabase/seed-media.sql](../../supabase/seed-media.sql) as the record of the
+  rows it changed. Requires the host accounts from `seed-hosts.mjs` to exist.
 
 ## 5. Configure auth redirect
 - **Authentication → URL Configuration**:

@@ -12,14 +12,20 @@
 > historical record of how it got here — read those for the *why* behind a
 > decision, this one for *what exists now*.
 
-**Stack:** Next.js 16 (App Router), React 19, Tailwind CSS v4, TypeScript, **Supabase** (auth + Postgres + Storage), Leaflet for maps. `tsc`, `eslint` and `next build` are all clean; the project has **zero lint errors**.
+**Stack:** Next.js 16 (App Router), React 19, Tailwind CSS v4, TypeScript, **Supabase** (auth + Postgres + Storage), Leaflet for maps.
+
+`tsc`, `eslint` (over `app/`, `components/`, `lib/` and `scripts/`) and `next build` are all clean; the project still has **zero lint errors**.
+
+> A note that briefly stood here recorded two faults caught mid-flight during the light-mode pass — a bare `accent` left behind in `globe.tsx` while its colours were being moved onto tokens (`TS2304`), and a `set-state-in-effect` violation in the first draft of `theme-toggle.tsx`. **Both are fixed** as of 2026-08-24 and the tree is green; the second one is written up properly in that pass's dated section, since the lint rule was pointing at a real bug rather than a style preference.
+
+**Two themes since 2026-08-24** — dark (the default, and unchanged) and light — switched by `<ThemeToggle>` in the footer, the account menu and the mobile drawer, and applied before first paint by an inline script in [app/layout.tsx](../../app/layout.tsx). See the last dated section in this file.
 
 **Routes** — ○ static · ● SSG · ƒ dynamic (server-rendered per request) · 🔒 login-gated in `proxy.ts`
 
 | Route | File | State |
 |-------|------|-------|
 | ○ `/` | [app/(home)/page.tsx](../../app/%28home%29/page.tsx) | Nav + collapsing search + Hero + interactive map (one shared search), Trending, HowItWorks, Stats, CTA, Footer |
-| ƒ `/explore` | [app/explore/page.tsx](../../app/explore/page.tsx) | Filters (pills + budget bar + amenities drawer), List/Map toggle, split map with hover-sync, everything URL-synced |
+| ƒ `/explore` | [app/explore/page.tsx](../../app/explore/page.tsx) | Filters (pills + budget bar + amenities drawer), List/Map toggle, split map with hover-sync, everything URL-synced. A destination with no homes **widens to its country, then to everything**, saying which it did (2026-08-23) |
 | ● `/explore/[id]` | [app/explore/[id]/page.tsx](../../app/explore/[id]/page.tsx) | Photo mosaic + lightbox, amenities, reviews, "Where you'll be" map, swap panel, similar homes |
 | ○ `/how-it-works` | [app/how-it-works/page.tsx](../../app/how-it-works/page.tsx) | Sticky step rail (scroll-spy) beside a **live product panel per step**, trust cards, FAQ grouped into Money / Safety / Dates / Your home. Every word comes from the CMS `site_content` table (2026-08-22) |
 | ƒ `/blog`, ● `/blog/[slug]` | [app/blog](../../app/blog) | Editorial list with a URL-synced category filter; posts render **ten block types** — text, list, image, gallery, quote, callout, YouTube (click-to-load), code, and a **live listing card** read from `houses`. 5 posts from Supabase `blog_posts` (2026-08-22) |
@@ -36,7 +42,7 @@
 | ○ `/privacy`, ○ `/terms` | [app/privacy/page.tsx](../../app/privacy/page.tsx) · [app/terms/page.tsx](../../app/terms/page.tsx) | The two pages the footer used to promise as “(soon)”. Both drawn by [legal-doc](../../components/legal-doc.tsx); content is specific to this codebase, not boilerplate (2026-08-22) |
 | ○ 404 | [app/not-found.tsx](../../app/not-found.tsx) · [app/swaps/not-found.tsx](../../app/swaps/not-found.tsx) | Site-wide dead end, plus a swaps-scoped one whose two exits are *All my swaps* / *Browse homes* (2026-08-22) |
 
-**Data:** everything comes from **Supabase** (project ref `jkxtknkrmctgecpeozvb`) through the single data layer in [lib/houses.ts](../../lib/houses.ts), which still falls back to the original gist if Supabase is unconfigured or a query fails. Tables: `houses`, `profiles`, `saved_homes`, `reviews`, `swap_requests`, `swap_messages`, plus the reference geography `countries` (250) and `cities` (50,154); Storage buckets: `avatars`, `house-photos`. Schema of record: [supabase/schema.sql](../../supabase/schema.sql), [supabase/swaps.sql](../../supabase/swaps.sql) (swap requests + messaging, applied 2026-08-21) [supabase/places.sql](../../supabase/places.sql) (the Country/City pickers, applied 2026-08-21 — seeded from GeoNames by [scripts/build-places-seed.mjs](../../scripts/build-places-seed.mjs)) [supabase/profile.sql](../../supabase/profile.sql) (the Travel & swap profile columns + the `delete_own_account()` RPC, applied 2026-08-22), [supabase/trust.sql](../../supabase/trust.sql) (what the ✓ Verified badge means, applied 2026-08-22) and [supabase/reviews.sql](../../supabase/reviews.sql) (members writing reviews + the rating trigger, applied 2026-08-22).
+**Data:** everything comes from **Supabase** (project ref `jkxtknkrmctgecpeozvb`) through the single data layer in [lib/houses.ts](../../lib/houses.ts), which still falls back to the original gist if Supabase is unconfigured or a query fails. Tables: `houses`, `profiles`, `saved_homes`, `reviews`, `swap_requests`, `swap_messages`, plus the reference geography `countries` (250) and `cities` (50,154); Storage buckets: `avatars` (7 objects) and `house-photos` (55) — since **2026-08-23 every listing photo and every host avatar is served from Storage**, not hotlinked to Unsplash ([scripts/seed-storage-media.mjs](../../scripts/seed-storage-media.mjs), last dated section). Schema of record: [supabase/schema.sql](../../supabase/schema.sql), [supabase/swaps.sql](../../supabase/swaps.sql) (swap requests + messaging, applied 2026-08-21) [supabase/places.sql](../../supabase/places.sql) (the Country/City pickers, applied 2026-08-21 — seeded from GeoNames by [scripts/build-places-seed.mjs](../../scripts/build-places-seed.mjs)) [supabase/profile.sql](../../supabase/profile.sql) (the Travel & swap profile columns + the `delete_own_account()` RPC, applied 2026-08-22), [supabase/trust.sql](../../supabase/trust.sql) (what the ✓ Verified badge means, applied 2026-08-22) and [supabase/reviews.sql](../../supabase/reviews.sql) (members writing reviews + the rating trigger, applied 2026-08-22).
 
 **Key components**
 - **Chrome:** [navigation](../../components/navigation.tsx) (+ [user-menu](../../components/user-menu.tsx), [mobile-account](../../components/mobile-account.tsx)), [footer](../../components/footer.tsx) (+ [footer-account](../../components/footer-account.tsx), the one client-side column, so the rest stays a Server Component), [button](../../components/button.tsx) (the one button system), [avatar](../../components/avatar.tsx), [cta](../../components/cta.tsx) (the closing block — asks for a different next step signed out / signed in / hosting).
@@ -44,7 +50,7 @@
 - **App-wide state:** [profile-context](../../components/profile-context.tsx) (who's signed in, loaded once), [saved-context](../../components/saved-context.tsx) (wishlist ids, loaded once), [swaps-context](../../components/swaps-context.tsx) (the account badge count) — all three providers live in [app/layout.tsx](../../app/layout.tsx).
 - **Controls:** [select](../../components/select.tsx) (the one dropdown — Explore's sort, the listing form's home type, the swap panel's offered home; replaced the last three native `<select>`s, whose OS-drawn menus were the only white surfaces on the site), [suggest-input](../../components/suggest-input.tsx) (the combobox behind Country / City, static or fetched).
 - **Places:** [lib/places.ts](../../lib/places.ts) — Supabase-backed country and city lookup (`searchCountries`, `searchCities`, `searchCitiesGlobal`, `findCountry`), replacing the two hand-typed arrays that used to live there.
-- **Search + map:** [home-search-context](../../components/home-search-context.tsx), [search-fields](../../components/search-fields.tsx), [home-hero-map](../../components/home-hero-map.tsx), [map-section](../../components/map-section.tsx) → [home-map](../../components/home-map.tsx), [explore-map](../../components/explore-map.tsx), [house-map](../../components/house-map.tsx).
+- **Search + map:** [home-search-context](../../components/home-search-context.tsx) (the destination is structured — label + city + country + ISO code — since 2026-08-23), [search-fields](../../components/search-fields.tsx) (the "Where" panel is a real combobox with Near me / Anywhere / Recent / Whole country), [lib/place-filter](../../lib/place-filter.ts) (the one place that decides what a destination matches, shared by Explore and both maps), [lib/recent-places](../../lib/recent-places.ts), [home-hero-map](../../components/home-hero-map.tsx), [map-section](../../components/map-section.tsx) → [home-map](../../components/home-map.tsx), [explore-map](../../components/explore-map.tsx), [house-map](../../components/house-map.tsx).
 - **Listings:** [house-card](../../components/house-card.tsx) (shared by Explore/Trending/My listings), [card-gallery](../../components/card-gallery.tsx), [gallery](../../components/gallery.tsx), [swap-panel](../../components/swap-panel.tsx), [reviews-section](../../components/reviews-section.tsx), [amenity-list](../../components/amenity-list.tsx), [save-button](../../components/save-button.tsx).
 - **Swaps:** [swap-dock-context](../../components/swap-dock-context.tsx) (docks the panel into the nav), [swap-actions](../../components/swap-actions.tsx) (accept / decline / withdraw), [swap-thread](../../components/swap-thread.tsx) (the conversation), data layer [lib/swaps.ts](../../lib/swaps.ts) + client-safe [lib/swap-types.ts](../../lib/swap-types.ts).
 - **Account:** [auth-form](../../components/auth-form.tsx), [profile-form](../../components/profile-form.tsx), [profile-strength](../../components/profile-strength.tsx), [my-reviews](../../components/my-reviews.tsx), [account-settings](../../components/account-settings.tsx), [listing-form](../../components/listing-form.tsx), [unlist-button](../../components/unlist-button.tsx), [trust-checklist](../../components/trust-checklist.tsx), [review-form](../../components/review-form.tsx) (+ [swap-review](../../components/swap-review.tsx), the accepted-swap entry point); client-safe field constants + the strength calculation in [lib/profile-types.ts](../../lib/profile-types.ts), and the Verified thresholds in [lib/trust.ts](../../lib/trust.ts).
@@ -128,6 +134,8 @@ Define these once in `globals.css` as CSS variables and expose them to Tailwind 
 
 Monochromatic blue (brand + accent are both blue) is the safest choice per Lecture 6 — it stays on-brand and is fully color-blind safe. To retune later, edit only these ~10 lines; the whole site follows. Utility names in components: `bg-bg`, `bg-surface`, `bg-surface-2`, `border-border`, `text-fg`, `text-muted`, `bg-brand hover:bg-brand-hover`, `text-accent`.
 
+**Since 2026-08-24 there is a second block below this one in `globals.css`** — the light theme, selected by `data-theme="light"` on `<html>`. Every token above keeps its name and its ROLE there and only its value changes, so no component ever learns there are two themes. Three tokens were *added* by that pass, because a theme swap needs them and a single theme did not: `--color-shade` (shadow ink), `--color-tint` (the wash a hover lays over a bare control) and `--color-door` (the logo's door panel, split out of `accent` because one is a shape and the other is text, and only text has a contrast floor). Dark stays the default.
+
 ---
 
 ## 4. Supabase integration — ✅ LIVE (connected 2026-08-17)
@@ -200,7 +208,7 @@ Supabase satisfies "remote headless CMS" for the blog and listings. If the rubri
 
 ## 7. Nice-to-haves (if time allows)
 - ✅ **Mascot in the nav + favicon — done** (2026-08-21). The logo is traced to vector in [lib/brand-art.ts](../../lib/brand-art.ts) and served by [components/brand.tsx](../../components/brand.tsx); the placeholder `DoorMark` SVG is gone, replaced by an animated one that opens on hover. See the dated section at the end of this file.
-- Light/dark theme toggle (trivial once tokens exist — just swap the `:root` variable block).
+- ✅ **Light/dark theme toggle — done** (2026-08-24). The `:root` swap was the easy fifth of it; the rest was depth (shadows and hover tints are not colours), the two surfaces painted by JavaScript rather than CSS (the Leaflet basemap and the globe canvas), and artwork with its tones baked in (a second mascot ramp). See the dated section at the end of this file.
 - ✅ Saved / favourite homes — **done** (auth + `saved_homes` table + `/dashboard`; see the *Explore round 2* section, 2026-08-17).
 - ✅ Loading skeletons and empty/error states — **done** (`components/skeletons.tsx` + route `loading.tsx` files).
 - Basic SEO: per-page metadata, `sitemap.ts`, `robots.ts`.
@@ -470,7 +478,7 @@ Ranked by what actually blocks the course deliverable, not by size.
 13. ✅ **FIXED (2026-08-18) — the `usePresence` lint error.** `mounted` is now derived during render instead of being set synchronously in an effect. **The project has zero lint errors**, so the report can claim a clean codebase.
 14. **Stats are invented numbers** ("50K+ Members") — carry a disclaimer today, but they're still fiction on the home page.
 15. **SEO basics: `sitemap.ts` and `robots.ts`** are still the open half. **Share metadata is done (2026-08-22)** — every public route now emits its own `og:*` + `twitter:*` + canonical through [lib/seo.ts](../../lib/seo.ts), verified 22/22; the site-root OG *image* landed 2026-08-21. Per-route card **images** (`opengraph-image.tsx` + `next/og`) were offered and deliberately not taken — see the last dated section for the font constraint if that changes.
-16. **Light/dark toggle** — trivial now that every colour is a token in [globals.css](../../app/globals.css), and it would demo the design system nicely.
+16. ✅ **FIXED (2026-08-24) — light/dark toggle.** A second token block in [globals.css](../../app/globals.css) selected by `data-theme` on `<html>`, set before first paint by an inline script and flipped by one `<ThemeToggle>` in three places (footer, account menu, mobile drawer). The dark theme is provably unchanged. It does demo the design system — and it also found the four places the system was not as tokenised as this line assumed: 21 hard-coded shadows, 4 hover tints, the map tiles and the globe's greys. Dated section at the end of this file.
 
 ### Housekeeping
 17. **Availability dates need a yearly roll** (see the section above) if the project is revisited after 2027.
@@ -909,9 +917,11 @@ still prerender · **zero console errors** · **no horizontal overflow at 390 / 
 
 #### Known limitations / follow-ups
 
-- The marquee's avatars are **initials, not photos** — none of the seeded reviewers has an
+- ~~The marquee's avatars are **initials, not photos** — none of the seeded reviewers has an
   `avatar_url`. `Avatar` already prefers a real photo when one exists, so this fixes itself
-  if the demo profiles ever get pictures.
+  if the demo profiles ever get pictures.~~ ✅ **FIXED 2026-08-23** — all seven demo hosts
+  now carry a portrait in the `avatars` bucket, and the marquee renders them. See the last
+  dated section.
 - Long home names **truncate** in a marquee card (*"Swapped into Provencal Lavender Estate,
   Prov…"*), taking the trailing arrow with them. Fine at 19rem; worth a shorter label if the
   card ever narrows.
@@ -2044,6 +2054,11 @@ A ✓ that touched no fact about anybody, on roughly 70% of homes because that i
 
 **Not required: a profile photo.** It belongs in this rule on the merits — the profile page itself calls it "the single strongest trust signal on a swap request". It is out because **no seeded host has one** (`avatar_url` is null for all 7), so requiring it today would mean nobody is verified and every badge on the site vanishes. Recorded as a decision, not an oversight: seed host avatars and the line goes back in.
 
+> **Unblocked 2026-08-23.** All seven demo hosts now have an avatar in Storage, so
+> the reason above no longer holds. Putting the line back into `is_verified_host()`
+> is a one-line change — deliberately **not** made at the same time, because it
+> changes who wears a badge and that is a product call. See the last dated section.
+
 **Where the rule lives.** In the database, once: `public.is_verified_host(profiles)` in [supabase/trust.sql](../../supabase/trust.sql), exposed to PostgREST as a **computed column**. A function whose single argument is the table's row type can be selected as though it were a stored field, so the existing host embed just asks for it:
 
 ```
@@ -2709,3 +2724,618 @@ regenerated `supabase/seed-cms.sql` into the SQL editor fixes it; it upserts on
 `site_content` for `/how-it-works` — check it before the demo.
 
 `tsc`, `eslint` and `next build` clean; all five posts still prerender.
+
+### The "Where" button stopped losing what you picked (2026-08-23)
+
+Asked for as a pass over the search bar's **Where** control, on the home page
+and on Explore. It was evaluated as a heuristic evaluation first (Lecture 4
+method: findings ranked, each tied to a lecture), the scope was chosen from a
+clickable menu — **all three packages**, and **widen to the country, then to the
+world** for an empty result — and then built from the ranked list. `tsc`,
+`eslint` over `app/`, `components/` and `lib/`, and `next build` are green; `/`
+is still `○ (Static)`, all 14 listings and all 5 posts still `●`. Every number
+below was read out of headless Chrome over CDP against the running production
+build: **39 checks, zero console errors**.
+
+#### The panel was good. Everything after the click was not.
+
+The popover itself had been rebuilt on 2026-08-21 to search the whole `cities`
+table, precisely so that typing a real place could never look like a broken
+search. It worked. But a pick then threw away all of its own knowledge, and the
+filter behind it could not read what the panel printed.
+
+**S1 — Typing back what the panel had just shown you returned nothing.** The
+filter was one concatenated blob — `name + location + country`, lowercased,
+`includes(query)` — with no comma anywhere in it, while every row in the panel
+reads *"Santorini, Greece"*. So the exact words the product offered were the
+words it could not find (Nielsen #1, speak the user's language; #2, two things
+that mean the same must behave the same). Matching is per token now
+([lib/place-filter.ts](../../lib/place-filter.ts)), split on anything that is
+neither a letter nor a number, so punctuation is punctuation. Measured on the
+built page: `?q=Santorini, Greece` went **0 → 1**, and so did `Kyoto, Japan` and
+`Camps Bay, South Africa`; `greece villa` now works for the same reason.
+
+**S2 — The worst one: a pick died on the click.** `onPick` stored the bare city
+name, so by the time the grid was empty nothing knew which *country* had been
+asked about. That is why searching a city nobody hosts in — Lisbon, say — ended
+on *"No homes match your filters"* under a faded mascot. The panel had just told
+the reader Lisbon exists; the results said nothing about Lisbon at all. Textbook
+Gulf of Evaluation (Lecture 3): the action was performed, the outcome was
+visible, and it could not be interpreted.
+
+A row now hands over a whole `PlaceFilter` — label, city, country, ISO code —
+and all four survive the URL (`?q=&city=&country=&cc=`) and the hop from the
+home page to Explore.
+
+**S3 — It was not a combobox.** No `role`, no `aria-activedescendant`, no arrow
+keys, and Enter skipped to "When" instead of taking the row under the cursor: a
+keyboard user could read the suggestions and not choose one. Meanwhile
+[suggest-input.tsx](../../components/suggest-input.tsx), the picker the listing
+form uses for the same job, is a full combobox — one site, two destination
+pickers, two behaviours (Nielsen #2; CRAP *repetition*). ↑ ↓ rove and wrap,
+Home/End jump, Enter commits the highlight, Escape closes, `role="status"`
+announces the count.
+
+**S4 — A raw 🏠 on every row**, plus the country flag alone. Exactly the defect
+[icons.tsx](../../components/icons.tsx) was written to fix on 2026-08-22
+("Emoji are gone"), left behind on the site's *primary control* because the
+panel predates the set. Two new marks (`LocateIcon`, `ClockIcon`) and the
+existing `HomeIcon` / `GlobeIcon` replace it; the country badge keeps its sized,
+tinted chip, which is what makes Windows' letters-instead-of-flags fallback read
+as deliberate. Verified in the browser: **zero emoji code points in the list**.
+The last raw 📍 on "Use my location" in
+[home-map.tsx](../../components/home-map.tsx) went with it.
+
+**S5 — The panel demanded a city.** Persona 3 (Mateo & Elena) plans a trip by
+region, and Persona 1 goes wherever the work allows; neither arrives with an
+address. Untyped, the panel now opens on four labelled groups rather than one
+list — which is Hick's prescribed shape ("restructure into groups"), not a
+longer list:
+
+| Group | What it is |
+|---|---|
+| **Near me** | Geolocation → the *closest destination that actually has homes*, named with its distance |
+| **Anywhere** | Clears the destination; every home on the site |
+| **Recent** | The last five, in `localStorage`, with a Clear |
+| **Whole country** | Every country with a home in it, with live counts — the first thing ever to read `houses.country_code` |
+
+**Near me answers with a place, not a radius.** A radius can legitimately
+contain nothing, and a shortcut that can come back empty reads as broken
+(Nielsen #1). It also does **not** auto-advance to "When" the way a typed pick
+does: the panel chose the city on the user's behalf, so it stays open long
+enough to say which one and why. Measured from Zagreb: *"Closest to you: Split,
+Croatia — about 259 km away."* A denied permission gets the same sentence the
+map already uses, not silence (#6).
+
+*Caught by the browser, not by reading:* Near me first searched only the eight
+destinations the panel **displays**, so from Zagreb it answered Siena (461 km)
+while Split (259 km) sat outside the display cap — a quietly wrong answer to
+"nearest". The cap is a display decision, so it moved into the panel and the
+data layer now hands over every destination.
+
+#### The empty result, which was the point
+
+[explore-view.tsx](../../components/explore-view.tsx) evaluates the same filter
+at three place scopes — `exact`, `country`, `any` — and shows the narrowest one
+that has anything, naming what it did:
+
+1. **Same country.** *"No homes in Athens yet — nobody is offering a swap there
+   right now, here is 1 home in Greece instead"*, with **Search all of Greece**
+   as a real button.
+2. **Everywhere.** *"No homes in Lisbon yet — nobody is offering a swap there or
+   anywhere else in Portugal right now, here are all 14 that match the rest of
+   your search."*
+3. **Neither.** The destination was never the problem, so the original message
+   comes back rather than a widening that would not help.
+
+Three passes over fourteen homes costs nothing, and the alternative is a second
+definition of what a filter means.
+
+**Two things it is careful about.** *"Search all of Greece"* commits as an
+ordinary filter — it lands in the URL, appears as a removable chip and the back
+button undoes it — instead of being a view that only exists on this screen. And
+the other exit clears **only the destination**, leaving the dates and price the
+user also chose alone; a "Reset filters" button that silently dropped those
+would be the same label-vs-behaviour fault this pass exists to remove
+(Nielsen #2, #4).
+
+**It also stopped blaming the wrong filter.** Search Santorini with a $100
+budget and there genuinely *is* a home in Santorini — the price is the blocker.
+A fourth check asks whether the place has homes at all, ignoring everything
+else; if it does, the message is *"No homes in Santorini match your filters"*
+and no widening is offered, because pointing at the destination would send the
+reader to fix the one thing that was already right.
+
+**And "Showing 0 of 14 homes" is now suppressed above the widening block** — a
+status line contradicting a grid of six visible home cards. The live region
+moves down to the block, so assistive tech still gets exactly one announcement.
+
+#### Files
+
+New: [lib/place-filter.ts](../../lib/place-filter.ts) (pure matcher + scopes;
+`normalizePlaceQuery` moved here and is **re-exported** by
+[lib/places.ts](../../lib/places.ts), so there is still one folding rule and the
+map does not pull in the Supabase client to get it — the same split as
+`house-types.ts` vs `houses.ts`) and
+[lib/recent-places.ts](../../lib/recent-places.ts).
+Touched: [search-fields.tsx](../../components/search-fields.tsx),
+[home-search-context.tsx](../../components/home-search-context.tsx),
+[explore-view.tsx](../../components/explore-view.tsx),
+[home-map.tsx](../../components/home-map.tsx),
+[map-section.tsx](../../components/map-section.tsx),
+[home-hero-map.tsx](../../components/home-hero-map.tsx),
+[icons.tsx](../../components/icons.tsx), [lib/houses.ts](../../lib/houses.ts)
+(`House.countryCode`, a richer `Destination`, new `topCountries`),
+[lib/house-types.ts](../../lib/house-types.ts),
+[app/(home)/page.tsx](../../app/%28home%29/page.tsx),
+[app/explore/page.tsx](../../app/explore/page.tsx).
+
+**Two lint rules shaped the code, and they were worth it.** Reading
+`localStorage` in an effect and reading it during render are both wrong (one is
+a synchronous setState in an effect, the other a hydration mismatch), so recent
+places is a **`useSyncExternalStore`** source with a referentially stable
+snapshot — the call [back-to-results.tsx](../../components/back-to-results.tsx)
+already made, for the same reason. The highlighted row is stored *with the list
+it belongs to* and reset during render rather than in an effect, which is the
+2026-08-18 `usePresence` fix applied again. **The project still has zero lint
+errors.**
+
+#### Verified, not eyeballed
+
+`tsc` · `eslint` (`app/`, `components/`, `lib/`) · `next build` all clean, 34
+routes, no route changed its rendering mode. Driven in headless Chrome against
+the production build — **39 checks, zero console errors**: the panel is a
+combobox with working ↑↓ / Home / End / Enter / Escape; four groups untyped and
+three typed; no emoji and no nested buttons inside `role="option"`; a pick is
+remembered *with its country and code*; the widening block names the place,
+offers the country, renders the homes and suppresses the count line; "Search all
+of Greece" reaches the URL; Near me resolves, explains and fails gracefully; the
+sheet still docks to the bottom edge at 390×844 with no horizontal overflow; and
+`/`, `/explore`, `/explore/[id]`, `/how-it-works` and `/blog` all render
+unchanged at 1280.
+
+#### Left open
+
+- **`houses.country_code` is a shortcut, not yet an Explore pill.** The panel's
+  "Whole country" rows set the filter, but there is still no Country pill beside
+  Home type / Rating (item 11's sibling).
+- **suggest-input.tsx is still the older shape** — a `<button>` inside
+  `role="option"`, which makes every suggestion a tab stop and announces each row
+  twice. The "Where" panel now does it the way the ARIA combobox pattern
+  specifies. That file sits in the publish flow, so aligning it wants a pass that
+  can re-verify a real listing being created.
+- **A city name colliding across countries** resolves to whichever homes match
+  the name, since `exact` scope tests the city without also demanding the
+  country. Deliberate at 14 listings — requiring both would drop a home whose
+  `country` is spelled differently from the gazetteer's ("USA" vs "United
+  States") — but it is the thing to tighten first if the catalogue grows.
+- **"Near me" is a one-shot lookup**, not a live position, and it is only as good
+  as the destinations that carry coordinates.
+
+### The photos stopped being borrowed — demo media moved into Supabase Storage (2026-08-23)
+
+Asked as a question first: *are the house photos and the fake profiles' avatars
+saved in Supabase Storage or not — and if not, move them there and make sure they
+load.* The answer was **no** on both counts, and the two halves turned out to be
+different problems.
+
+**What was actually there.** The ten seeded homes carried forty
+`images.unsplash.com` URLs — the originals from [schema.sql](../../supabase/schema.sql)
+and [seed-images.sql](../../supabase/seed-images.sql), never touched since. The
+`house-photos` bucket held **15 objects, every one of them the owner's own upload
+from form testing** — the photos belonging to the four junk listings (104, 107,
+110, 111). The `avatars` bucket was **completely empty**, and `profiles.avatar_url`
+was NULL for all seven demo hosts, which is why every host rendered as an initials
+circle.
+
+So the site's listing photography was hotlinked to a third party that **has
+already removed five of these exact photos once** — that is the entire reason
+`IMAGE_REPLACEMENTS` exists in [lib/houses.ts](../../lib/houses.ts). A demo that
+depends on someone else's CDN not deleting anything is a demo that can break on
+the morning it is graded.
+
+#### What was built — [scripts/seed-storage-media.mjs](../../scripts/seed-storage-media.mjs)
+
+One committed, re-runnable command (`--dry-run` supported), following the same
+rule as [build-places-seed.mjs](../../scripts/build-places-seed.mjs) and
+[derive-mascot.mjs](../../scripts/derive-mascot.mjs): data in the database should
+be reproducible from a command, not from a one-off nobody can repeat. It also
+writes [supabase/seed-media.sql](../../supabase/seed-media.sql) — 17 idempotent
+updates — as the readable record of the rows it changed.
+
+- **It authenticates as the hosts, not as a service role.** The Storage policies
+  key on an object path's **first folder segment** being `auth.uid()`. Rather
+  than reach for a service-role key that is not in `.env.local` anyway, the
+  script signs in as each demo host with the shared password from
+  [seed-hosts.mjs](../../supabase/seed-hosts.mjs) and uploads their own media as
+  them. The paths, the ownership and the RLS story therefore come out **identical
+  to a real member uploading through the app** — including the useful
+  consequence that unlisting a seeded home can now actually delete its files,
+  because `storagePathFromUrl` finally recognises them.
+- **The photo list is written down, not read back out of the database.** The
+  script carries `HOUSE_PHOTOS`, the same forty ids as the `pool` CTE in
+  `seed-images.sql` with that file's dead-photo replacements already applied.
+  This was **fixed after the first version got it wrong**: sourcing from
+  `houses.images` made the script self-referential the moment it had run once —
+  the rows now hold Storage URLs, so a second run re-downloaded the project's own
+  copies rather than the originals, and would have failed outright if the bucket
+  were ever emptied. A fixed manifest is what makes "safe to re-run" true rather
+  than accidentally true. (It produced identical bytes either way, because a
+  stored file *is* the Unsplash file verbatim — which is why the mistake was
+  invisible in the output and had to be reasoned about.) Only `host_id` is still
+  read live, since which host owns which home is the one genuinely dynamic fact.
+- **Five homes had a hero that disagreed with itself.** `houses.image` (the card
+  hero) and `houses.images[0]` (the gallery hero) differed on half the seeded
+  homes, because `image` still held a URL Unsplash had removed and only
+  `images[0]` carried the replacement — the app hid it by running both through
+  `fixImage()` at render time. Both columns are now written from one uploaded
+  file, so the data agrees with the screen instead of relying on a runtime repair.
+- **Quality is a pure relocation, deliberately.** The download asks Unsplash for
+  `w=2400&q=80` — byte for byte the same `UNSPLASH_MASTER` that `highRes()` in
+  `lib/houses.ts` was already requesting — so next/image resizes the same master
+  down per device and nothing about sharpness changes. Measured after the move:
+  the 1920px hero returns **259 KB of AVIF at q90**, against the 265 KB recorded
+  on 2026-08-17 when it was served from Unsplash.
+- **`fm=jpg`, not `auto=format`.** The bucket accepts jpeg/png/webp only, and
+  `auto` lets the CDN choose from an `Accept` header a script does not control.
+  Every download is also checked for the `FF D8` JPEG magic before it is
+  uploaded, so a CDN error page can never be stored as though it were a photo —
+  which would fail silently and surface only as a broken image on the site.
+- **Deterministic paths** (`<uid>/seed/house-<id>-<n>.jpg`, `<uid>/host-avatar.jpg`)
+  plus `x-upsert`, so a second run overwrites rather than accumulating orphans.
+  The app's own uploader uses random names ([lib/storage.ts](../../lib/storage.ts))
+  because it must never clobber a photo a member still wants; a seed has exactly
+  one avatar and wants precisely the opposite.
+
+#### The avatars were not a move, they were a decision
+
+There was nothing to relocate — no seeded host had ever had a picture. Seven
+Unsplash portraits were chosen against the personas in
+[Overview.md §3](./Overview.md) and **looked at** at the size the avatar actually
+renders, using `fit=facearea&facepad=2.6` so Unsplash's own face detection centres
+the crop rather than leaving a chin inside `components/avatar.tsx`'s circle. Alex
+Chen, Sarah Miller and Mateo & Elena Ruiz are matched to Personas 1, 2 and 3.
+
+**This closes two things this file had recorded as blocked:**
+
+1. The reviews marquee's *"avatars are initials, not photos — none of the seeded
+   reviewers has an `avatar_url`"* (2026-08-21). `Avatar` already preferred a real
+   photo when one existed, so it fixed itself: **7 host photos now render in the
+   marquee**.
+2. The ✓ Verified rule's *"Not required: a profile photo … it is out because no
+   seeded host has one, so requiring it today would mean nobody is verified"*
+   (2026-08-22). That reason is gone. Adding the line back to
+   `is_verified_host()` in [trust.sql](../../supabase/trust.sql) is now a one-line
+   change — **deliberately not made here**, since it changes who wears a badge,
+   and that is a product call rather than a side effect of moving files.
+
+#### Verified, not eyeballed
+
+- **47 objects uploaded, 27.8 MB** — 7 avatars, 40 listing photos. The buckets now
+  hold 7 (`avatars`) and 55 (`house-photos`, the 15 pre-existing test uploads
+  included). Largest file 1.4 MB, well under the bucket's 10 MB limit.
+- **Database:** 0 of 10 homes still on Unsplash, 0 of 40 gallery URLs still on
+  Unsplash, 7 of 7 profiles carrying an `avatar_url`, and `image === images[0]`
+  on all ten.
+- **All 57 public URLs fetched anonymously with no `apikey` header** — a public
+  bucket has to serve a plain browser — and every one returned HTTP 200 with the
+  JPEG magic bytes. **0 failures, 36 MB served.**
+- **Through the app**, against the running dev server: `/`, `/explore`,
+  `/explore/1` and `/explore/6` render **zero** `images.unsplash.com` sources, and
+  every `next/image` src points at `/storage/v1/object/public/`. 66 sampled
+  optimizer requests across those four routes returned `image/avif`, **0
+  failures** — so `next.config.ts`'s `**.supabase.co` remote pattern really does
+  cover these paths, and `highRes()` really does pass a non-Unsplash URL through
+  untouched.
+- **Screenshotted** at 1280px: the Explore grid, and `/explore/1` showing Sofia
+  Rossi's actual portrait in the "Hosted by" card where an initials circle used to
+  be.
+
+#### Found while verifying, and NOT fixed (pre-existing, not this pass)
+
+The working tree does not currently compile, and neither fault is related to this
+change or to any file it touches:
+
+1. **`components/globe.tsx:416`** — `ctx.strokeStyle = accent`, where the
+   surrounding code uses `palette.accent`. `tsc` reports
+   `TS2304: Cannot find name 'accent'`. This is an uncommitted edit (`git status`
+   shows the file as modified) and it is worse than a type error: the line sits in
+   the swap-arc draw path, so it throws a `ReferenceError` the first time an arc
+   is drawn, a few seconds into the home page.
+2. **`components/theme-toggle.tsx:66`** — an untracked new file that trips
+   `react-hooks/set-state-in-effect`, which is the one lint rule this project has
+   twice gone out of its way to satisfy (2026-08-18, 2026-08-23).
+
+Together they mean **`next build` fails and the "zero lint errors" claim in §1 is
+currently false**, so verification for this pass was done against `next dev`
+rather than a production build. Whoever left that work in progress should finish
+it before the demo.
+
+#### Left open
+
+- **Blog images are still hotlinked.** The covers and in-post images in
+  [lib/cms-seed.json](../../lib/cms-seed.json) (and therefore `seed-cms.sql`) are
+  ~15 more `images.unsplash.com` URLs — out of scope for this pass, and moot for a
+  second reason below, but they are the remaining third-party dependency on the
+  site. The script's shape would extend to them cheaply. The `/admin` block
+  editor's image fields are still URL boxes rather than uploaders, which is the
+  related gap recorded on 2026-08-22.
+- **`blog_posts` and `site_content` are still empty** (0 rows) — unchanged from
+  the 2026-08-23 note above. `supabase/seed-cms.sql` has never been run, so
+  `/blog` and `/how-it-works` are still serving the committed JSON fallback and
+  `/admin` has nothing to edit. Also **nobody is an admin yet**: `profiles.role`
+  is `member` for all 8 accounts, the owner's included, so `/admin` is currently
+  unreachable by anyone. Both are one SQL run each and both want doing before the
+  demo.
+- **`schema.sql` / `seed-images.sql` still carry Unsplash URLs, on purpose.** A
+  fresh project has empty buckets and needs something to bootstrap from; the
+  script is the second step, and a note at the top of `seed-images.sql` now says
+  so.
+- **The four junk test rows are still there** (ids 104, 107, 110, 111), still 4 of
+  the 14 homes on Explore, still one `delete` away — unchanged from item 20, and
+  still a deliberate data call.
+
+### Light mode (2026-08-24)
+
+The site had one theme. It now has two, and the dark one is untouched — every
+number below was read out of headless Chrome over CDP against the running
+production build (**42 automated checks, zero console errors**), not eyeballed.
+`tsc`, `eslint` over `app/`, `components/`, `lib/` and `scripts/`, and
+`next build` are green; all 34 routes kept their rendering mode, `/` is still
+`○ (Static)` and the 14 listings and 5 posts are still `●`.
+
+This closes item 16 in "Polish still outstanding" and the nice-to-have in §7.
+Both of those called it "trivial once tokens exist — just swap the `:root`
+variable block". The variable block took about twenty minutes. The rest of this
+section is the other four fifths of the job, which is the part worth reading.
+
+#### The palette
+
+A second block in [globals.css](../../app/globals.css), selected by
+`data-theme="light"` on `<html>`. Every token keeps its ROLE — `bg` is still the
+60%, `surface` the 30%, `brand`/`accent` the 10% — and the palette stays the
+blue monochrome Lecture 6 recommends: the light blues are shades of the same
+hue, not new hues, which is what keeps the brand recognisable across the switch.
+
+| Token | Dark | Light | Note |
+|---|---|---|---|
+| `bg` | `#1A2030` | `#EAEFF7` | soft blue-tinted off-white, deliberately **not** `#fff` |
+| `surface` | `#232B3E` | `#FFFFFF` | white lifts off the page |
+| `surface-2` | `#1E2536` | `#DFE6F2` | one step **down** from the page, mirroring the dark ramp |
+| `border` | `#33405A` | `#CCD7E8` | |
+| `surface-raised` / `border-raised` | `#333F5E` / `#4C5B7E` | `#FFFFFF` / `#A9BAD6` | see below |
+| `fg` / `muted` | `#EEF2F9` / `#A9B4C7` | `#131C33` / `#55637F` | |
+| `brand` / `brand-hover` / `accent` | `#3B82F6` / `#2F6FE0` / `#63B3ED` | `#2158D8` / `#1A49B8` / `#1668C9` | |
+| `success` / `danger` | `#34C77B` / `#F05252` | `#12703B` / `#C62020` | |
+| `selected` / `doorlight` | `#F59E0B` / `#FFD9A0` | `#D97706` / `#FDE3B0` | |
+
+**The page does not go to pure white**, and that is the one decision the whole
+ramp hangs off. A `#fff` page behind `#fff` cards has no ramp left to spend on
+elevation, and `surface-raised` exists precisely because the site's primary
+control has to read as sitting ON the page rather than in it (the 2026-08-21
+finding S3/S5). Off-white page, white cards is also what Airbnb and Booking do,
+so it costs nothing in external consistency (Nielsen #2).
+
+**Contrast measured on the painted page**, not calculated from the hex and
+hoped for: fg **14.65:1**, muted **5.23:1**, accent **4.71:1**, white on the
+primary button **6.08:1**. The dark theme's own muted measures 4.99:1, so both
+themes are held to one floor rather than the new one being waved through. The
+blues *had* to move — `#3b82f6` as text on `#eaeff7` is 3.1:1, and the eyebrows,
+links and step numbers drawn in `accent` are text.
+
+**One honest asymmetry.** In the dark theme `surface-raised` is a lighter slate
+than `surface`, so opening a search segment visibly lifts the chip and drops the
+bar. In the light theme both are white, because white is already the top of the
+ramp — there is nowhere lighter to go. The lift is carried by the shadow, a
+stronger hairline, the brand ring and the dimming of the neighbouring segments
+instead, which is the light-mode idiom rather than a workaround. Verified in the
+browser: the open state still reads.
+
+#### Three things a variable block cannot do
+
+**1. Depth is not a colour.** Twenty-one `shadow-black/NN` classes and four
+`bg-white/[0.0x]` hover tints were tuned against a near-black page. The same
+black at the same alpha is a soft lift on a dark page and a bruise on a white
+one, and a hover that *adds* light is wrong on a light surface. Both became
+tokens — `--color-shade` and `--color-tint` — so the retune is two values rather
+than twenty-five edits. `shade` is already translucent in the light theme
+(`rgb(15 23 42 / 0.55)`) and Tailwind's `/NN` modifier multiplies into it, so
+`shadow-shade/50` lands at alpha 0.28 and `shadow-shade/20` at 0.11. Read back
+out of the browser: dark computes `oklab(0 0 0 / 0.2)` — pure black, identical
+to what `shadow-black/20` produced before — and light computes
+`oklab(0.207678 … / 0.109804)`.
+
+**2. Two things are painted by JavaScript, not CSS.** The Leaflet basemap and
+the hero globe cannot follow a custom property on their own.
+- New [map-basemap.ts](../../components/map-basemap.ts) is now the one place
+  that decides what a map is made of, shared by the home, Explore and listing
+  maps. CARTO publishes Dark Matter and Positron as the same cartography at two
+  lightnesses, so the swap is a URL — same zoom levels, same labels, same
+  attribution, no second provider to explain. It listens for a theme event and
+  calls `setUrl`, which swaps the template on the existing layer rather than
+  replacing it: a fresh layer would drop the tile cache and flash the container
+  through while it re-fetched. Before this the URL was copy-pasted in three
+  files; with a second theme that would have been six.
+- [globe.tsx](../../components/globe.tsx) reads its two decoration greys and the
+  accent from CSS at mount and again on a theme change, and rebuilds its mark
+  sprites — they are pre-rendered once per size with the land colour baked in,
+  so re-reading without rebuilding would recolour the limb and the pins and
+  leave every continent in the other theme's grey.
+
+**3. Baked-in artwork ships twice.** The hero mascot's three tones are burnt
+into a PNG by [derive-mascot.mjs](../../scripts/derive-mascot.mjs). A CSS filter
+was rejected for the same reason that script exists at all — a filter shifts
+both tones together and could never keep the door reading as the prominent one.
+The script now writes a second ramp, `public/mascot-light.png`, and CSS hides
+the wrong copy.
+
+The two ramps are **not** mirror images. On a dark page prominence is *lighter*;
+on a pale one it is *darker*. So the body/door ORDER flips while their roles do
+not, and the knob follows the door because it has to read against the door and
+not against the page. Measured on the rendered hero, the two themes come out
+almost exactly symmetric: the body sits at **1.20:1** against its own background
+in both, and the door at 1.64:1 (dark) / 1.35:1 (light). A whisper either way,
+which is what the 2026-08-21 S2 finding requires and what the user asked for in
+as many words.
+
+> **The source artwork is gone.** `swapdoor homepage.png` was filed as loose
+> clutter in item 18 and has since left the repo root, so the script now falls
+> back to re-toning `public/mascot.png` — the dark file it produced itself. That
+> needs a *second* set of luminance windows, because the tone ORDER differs
+> between the two sources (`knob 11 < door 34 < body 51` in the original;
+> `knob 50 < body 74 < door 135` in the derived file, since making the door the
+> lighter element is exactly what the dark ramp did). Reading one with the
+> other's windows silently paints the door as body. Put the original back at
+> that path and the full two-ramp run returns with no other change. Verified by
+> counting tones in both files: 74.0% body / 25.6% door / 0.3% knob in the light
+> file against 73.6 / 25.5 / 0.3 in the dark one.
+
+#### `--color-door`, and why `accent` could not do this job
+
+The logo's door panel was drawn in `--color-accent`. That token is also the
+eyebrows, the links and the step numbers, i.e. **text**, and text has a contrast
+floor against the page — so on the light theme `accent` went dark, the jamb
+(`brand`) and the panel converged, and the nav mark rendered as a solid blue
+square with a dot in it. The mascot glyph on `/sign-in`, the 404 and the footer
+went the same way.
+
+They are two jobs, and they only look like one while there is a single theme.
+`--color-door` is now its own token, drawn only by `.door-mark__panel` and
+`MASCOT_DOOR`, and it is measured against its own frame rather than against the
+page: `#7CB0F2` on the `#2158D8` jamb is the same figure/ground relationship the
+dark theme has, from the other end. Its dark value is `#63B3ED` — the value it
+already had — so the dark rendering is byte-identical.
+
+#### The bug that only a screenshot found
+
+The first version of `<ThemeToggle>` read the stored theme in a lazy `useState`
+initialiser and silenced the resulting hydration mismatch with
+`suppressHydrationWarning`. Every assertion passed. The page went light, and the
+control sat there with **Dark** filled in.
+
+`suppressHydrationWarning` does not mean "ignore this difference" — it means
+*the DOM wins*. That is exactly right for the inline-script pattern the Next
+docs describe, where a script has already corrected the DOM. Here nothing had
+corrected the toggle's DOM, so React kept the server's stale markup and threw
+away the correct client render. `aria-pressed` was right the whole time, which
+is why the automated check passed and only a screenshot caught it.
+
+Two changes, and both are worth keeping:
+- The state is a **`useSyncExternalStore`** source ([lib/theme.ts](../../lib/theme.ts)) —
+  it hydrates with the server snapshot so the markup matches, then re-renders
+  with the real value. It is the same call [back-to-results.tsx](../../components/back-to-results.tsx)
+  and [lib/recent-places.ts](../../lib/recent-places.ts) already make, and it
+  avoids the `set-state-in-effect` lint error this project has paid for twice.
+  It also subscribes to `storage`, so two open tabs follow each other.
+- **Which segment looks selected is decided by CSS**, off `data-theme` — the
+  same attribute the palette hangs off. React cannot do it: it correctly renders
+  the *server* snapshot during hydration, so for one tick it believes Dark is
+  selected. On the page that is invisible (CSS painted it light before React
+  existed); on this one control it is the entire message. `aria-pressed` stays
+  React's, since an attribute cannot be painted.
+
+**And a second bug underneath it.** The re-assertion effect was keyed on that
+same state — `useLayoutEffect(() => syncThemeAttribute(theme), [theme])` — so on
+the hydration render it wrote the server's `"dark"` back over the bootstrap's
+`"light"`, flipping the whole page dark for the rest of the tick and handing
+that window to anything reading the theme in its own mount effect. The globe
+caught it every time and painted the dark continents onto a white page; the
+basemap caught it about half the time, which is exactly the kind of flake that
+survives a test suite. Found by sampling the canvas: it was painting
+`#c6d0e0` — the dark land — while `getComputedStyle` reported `#4e5b78`. The
+effect now reads storage and runs on mount only.
+
+#### Everything else that was measured
+
+- **The globe was a whole step too pale.** First pass put light land at
+  `#7c8aa8`; sampled off the rendered canvas its typical mark was **1.33:1**
+  against the page where the dark theme's is 2.96:1 — less than half the
+  presence, on the decoration the 2026-08-19 "round 2" pass exists to make
+  legible. Retuned to `#4e5b78` / `#7c89a6`, which brings ink coverage to
+  **15.1%** of the globe's box against dark's 14.8% and the typical mark to
+  1.94:1. The limb ring matches dark's 3.03:1 exactly.
+- **The nav drop-down's click-away backdrop** was `bg-black/20`, chosen against
+  a near-black page where it is barely there. On a white one the same value dims
+  the whole site and makes an ordinary drop-down look like a dialog. It is
+  `bg-shade/20` now (~11% in light). The genuinely modal backdrops — the drawer,
+  the mobile sheets, the lightbox — stay `black`, because a modal *should*
+  darken the page, in both themes.
+- **`color-scheme` moved to `:root`.** It used to sit in the mobile block scoped
+  to `max-width: 1023.98px`, with a note calling the move "a one-line change
+  when wanted". A second theme is when: the unchecked checkbox that prompted it
+  is a white square on a dark page and, left there, a dark square on a white one.
+- **The drawer's Appearance row needed `mb-5`**: signed out, what follows it is
+  `<MobileAccount>`'s bare Sign In button, which carries no top margin because
+  until now nothing rendered above it but a button that did.
+
+#### Where the control is, and why
+
+One `<ThemeToggle>`, three placements, so the site cannot grow two ways of doing
+the same thing (CRAP repetition):
+
+| Surface | Why there |
+|---|---|
+| **Footer bottom bar** | Its home. Every route, both auth states — so a signed-out visitor, which is most of them, can find it. Its own group at the far end rather than a fourth item in the link row, because it is not a destination (proximity, Lecture 5) |
+| **Account menu** | Between "my stuff" and the exit, where a signed-in member looks for a setting. Deliberately not a `data-menu-item`: the arrow keys rove between destinations, and a two-button control inside that order would make ArrowDown mean two things |
+| **Mobile drawer** | The footer is several screens away on a phone and the account copy only exists when signed in. Above the account block, because sign out is the exit and stays last (Nielsen #4) |
+
+**It is a two-segment control, not a switch or a lone moon icon.** A single glyph
+cannot say whether it reports the state you are IN or the state it takes you TO,
+and half the web picks each convention — that is recall, on a control whose whole
+job is a preference (#7). Both options are shown with the current one filled, so
+the setting is read rather than deduced (#1). It is also the shape the site
+already has for a binary choice (Explore's List/Map toggle, the sign-in tabs), and
+each segment carries a mark **and** its word, so selection never rests on colour
+alone (Lecture 6, guideline 4).
+
+#### The default is still dark
+
+`<html data-theme="dark">` ships in the prerendered HTML, and an inline script in
+`<head>` — the pattern in
+`node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md` —
+rewrites it to `light` only if the visitor has chosen that. It runs during HTML
+parsing, before the first paint and long before React, which is the whole reason
+it is a script and not an effect: a `useLayoutEffect` runs after hydration, so on
+a slow connection the visitor would watch a full dark page repaint to light.
+
+**`prefers-color-scheme` is deliberately not honoured.** Dark is what this
+project has been designed and screenshotted against since the palette was
+chosen, and a mentor opening it on a light-mode OS should see the design the
+report describes. Making the OS the default is one line in `lib/theme.ts`
+(`storedTheme()` falling back to `matchMedia("(prefers-color-scheme: light)")`
+instead of `DEFAULT_THEME`) if that is ever wanted.
+
+The site also still works with JavaScript off: the prerendered HTML is complete
+and coherent in the dark theme, and nothing about the switch is required to read
+the page.
+
+#### Verified, not eyeballed
+
+42 checks over the running production build. A cold visit is dark with nothing
+in storage; the switch moves the attribute, the storage, `color-scheme`, every
+token, the mascot, the globe greys and the shadow ink; the choice survives a
+reload and a route change; the contrast figures above; both mascot files are in
+the DOM with exactly one displayed; the map serves 18 light tiles after the
+switch and 18 dark ones after switching back; the prerendered HTML still carries
+`data-theme="dark"` and the bootstrap ships in the head; and a whole section
+asserts the dark theme is unchanged where the pass touched it — `shade` still
+`#000`, `tint` still `#fff`, the door panel still painting `rgb(99, 179, 237)`,
+the rest of the dark ramp byte-identical, and every painted `shadow-shade` shadow
+still pure black. Screenshotted at 1280 and 390 across the home page, Explore, a
+listing, How-it-Works, the blog, a post, sign-in, the footer, the mobile drawer,
+the account menu, the sort dropdown and the Where popover.
+
+#### Left open
+
+- **`prefers-color-scheme`**, above — a decision, not an oversight.
+- **No transition on the swap.** The repaint is instant. A cross-fade would need
+  a rule broad enough to catch every element, which fights the hover transitions
+  already on most of them.
+- **The mascot ships two PNGs (~70KB each)** and the browser fetches both, since
+  the hidden copy is `display: none` rather than absent. Choosing in React would
+  mean either a client component in the middle of a statically prerendered fold
+  or a visible change of artwork one frame after paint; two files is the cheaper
+  problem. It is `lg`-only and decorative either way.
+- **Leaflet's popups** are its own white bubbles in both themes. They were
+  already light on the dark site, so this pass did not make them worse — but
+  they are the last surface that does not follow the tokens.

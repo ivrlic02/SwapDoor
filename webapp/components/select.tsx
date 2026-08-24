@@ -302,7 +302,7 @@ function SelectPanel({
     <div
       data-select-panel
       style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-      className="z-[70] rounded-2xl border border-border bg-surface shadow-2xl shadow-black/50"
+      className="z-[70] rounded-2xl border border-border bg-surface shadow-2xl shadow-shade/50"
     >
       {children}
     </div>,

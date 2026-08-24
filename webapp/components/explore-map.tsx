@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { House } from "@/lib/houses";
+import { addBasemap } from "@/components/map-basemap";
 
 export type MapBounds = { south: number; west: number; north: number; east: number };
 
@@ -87,17 +88,14 @@ export default function ExploreMap({
       setUserMoved(true);
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
-    }).addTo(map);
+    const unfollowTheme = addBasemap(map);
 
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 120);
 
     return () => {
+      unfollowTheme();
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
@@ -177,7 +175,7 @@ export default function ExploreMap({
             });
             setUserMoved(false);
           }}
-          className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-fg shadow-lg shadow-black/30 transition hover:border-brand"
+          className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-fg shadow-lg shadow-shade/30 transition hover:border-brand"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path

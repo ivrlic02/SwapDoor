@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { House } from "@/lib/house-types";
 import { landCoverage } from "@/lib/land-mask";
+import { THEME_EVENT } from "@/lib/theme";
 
 /*
   The hero's right-hand decoration: a slowly turning globe whose continents are
@@ -36,13 +37,34 @@ import { landCoverage } from "@/lib/land-mask";
   `prefers-reduced-motion` gets a single static frame.
 */
 
-// Decoration greys, the same pair the mascot artwork was recoloured to in
-// hero-decor.tsx — the light tone for the continents, the dark line tone for
-// the limb ring, so the land carries the contrast (Lecture 5) without adding a
-// colour.
-const LIMB = "#5e6b85";
-const LAND = "#c6d0e0";
-const ACCENT_FALLBACK = "#63b3ed";
+// The three colours this canvas draws with. All three are read from the CSS
+// custom properties at mount and again whenever the theme changes, so the one
+// surface on the site that is painted by JavaScript rather than by CSS still
+// follows app/globals.css like everything else.
+//
+// `land` and `limb` are the decoration greys: land is the tone that carries the
+// contrast (Lecture 5) and limb is the quieter one the sphere's dashed edge is
+// drawn in. They are NOT interchangeable and they are not simply inverted
+// between the themes — on a dark page the land is the *lighter* mark and on a
+// pale one it is the *darker*, because "figure" is whichever of the two is
+// further from the ground behind it.
+//
+// The literals below are only the fallbacks for the case where the variables
+// cannot be read at all; the real values live beside the rest of the palette.
+const FALLBACK = { limb: "#5e6b85", land: "#c6d0e0", accent: "#63b3ed" };
+
+type Palette = { limb: string; land: string; accent: string };
+
+function readPalette(): Palette {
+  const css = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string) =>
+    css.getPropertyValue(name).trim() || fallback;
+  return {
+    limb: read("--globe-limb", FALLBACK.limb),
+    land: read("--globe-land", FALLBACK.land),
+    accent: read("--color-accent", FALLBACK.accent),
+  };
+}
 
 const TAU = Math.PI * 2;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
@@ -248,9 +270,11 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const accent =
-      getComputedStyle(document.documentElement).getPropertyValue("--color-accent").trim() ||
-      ACCENT_FALLBACK;
+    // Mutable, because a theme change rewrites it in place: the draw loop and
+    // the sprite builder both close over this object, so replacing its fields
+    // is what lets a repaint pick the new colours up without tearing the
+    // canvas down and restarting the spin from Greenwich mid-scroll.
+    let palette = readPalette();
 
     let points: Points | null = null;
     let sprites: HTMLCanvasElement[] = [];
@@ -296,7 +320,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
       );
       if (!points || points.sampled !== sampled) points = buildPoints(sampled, spacing >= 5);
       const sprite = Math.max(8, Math.ceil(glyph * dpr * 1.3));
-      sprites = buildSprites(sprite, LAND);
+      sprites = buildSprites(sprite, palette.land);
       return true;
     }
 
@@ -341,7 +365,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
       // and dashes keep it in the same dotted language as the continents rather
       // than ruling a hard circle around them.
       ctx.globalAlpha = 0.45;
-      ctx.strokeStyle = LIMB;
+      ctx.strokeStyle = palette.limb;
       ctx.lineWidth = Math.max(1, glyph * 0.3);
       ctx.setLineDash([Math.max(1, glyph * 0.3), Math.max(3, glyph)]);
       ctx.beginPath();
@@ -389,7 +413,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
         const sinO = Math.sin(omega);
         if (sinO > 1e-3) {
           ctx.globalAlpha = arcAlpha * 0.8;
-          ctx.strokeStyle = accent;
+          ctx.strokeStyle = palette.accent;
           ctx.lineWidth = Math.max(1, radius * 0.009);
           ctx.lineCap = "round";
           ctx.beginPath();
@@ -429,7 +453,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
           // A dot riding the leading end while the arc is still drawing.
           if (grown < 1 && headVisible) {
             ctx.globalAlpha = arcAlpha;
-            ctx.fillStyle = accent;
+            ctx.fillStyle = palette.accent;
             ctx.beginPath();
             ctx.arc(headX, headY, Math.max(1.4, radius * 0.017), 0, TAU);
             ctx.fill();
@@ -448,7 +472,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
         // read as busier than one with two, without growing into a blob that
         // swallows its neighbours at the next zoom level down.
         const pin = pinBase * (1 + Math.min(0.55, Math.log2(p.homes) * 0.2));
-        ctx.fillStyle = accent;
+        ctx.fillStyle = palette.accent;
         ctx.globalAlpha = 0.18 * fade;
         ctx.beginPath();
         ctx.arc(proj[0], proj[1], pin * 2.4, 0, TAU);
@@ -536,6 +560,15 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
       sync();
     };
     const onReduced = () => refresh();
+    // A theme change repaints rather than remounts. `refresh()` runs the whole
+    // of `layout()`, which is what rebuilds the mark sprites — they are
+    // pre-rendered ONCE per size with the land colour baked in, so re-reading
+    // the palette without rebuilding them would recolour the limb ring and the
+    // pins and leave every continent in the other theme's grey.
+    const onTheme = () => {
+      palette = readPalette();
+      refresh();
+    };
     const io = new IntersectionObserver(
       ([entry]) => {
         onScreen = entry.isIntersecting;
@@ -549,6 +582,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
     ro.observe(canvas);
     document.addEventListener("visibilitychange", onVisibility);
     reduced.addEventListener("change", onReduced);
+    window.addEventListener(THEME_EVENT, onTheme);
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
@@ -556,6 +590,7 @@ export function Globe({ houses = [], className }: { houses?: House[]; className?
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", onReduced);
+      window.removeEventListener(THEME_EVENT, onTheme);
     };
   }, []);
 

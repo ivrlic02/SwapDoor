@@ -167,6 +167,32 @@ export function GlobeIcon(props: IconProps) {
   );
 }
 
+// ── Search panel ────────────────────────────────────────────────────────────
+// The "Where" panel's row marks. It used to draw a raw 🏠 on every destination
+// and lean on the country flag alone — the same emoji problem this file was
+// written to fix, left behind on the site's primary control because the panel
+// predates the set.
+
+/** A crosshair over a point: "use where I am". */
+export function LocateIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22" />
+    </Icon>
+  );
+}
+
+/** A clock: the recently-searched rows. */
+export function ClockIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 7.5V12l3 1.8" />
+    </Icon>
+  );
+}
+
 export function LightbulbIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -259,6 +285,31 @@ export function CodeIcon(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="m8.5 8.5-4 3.5 4 3.5M15.5 8.5l4 3.5-4 3.5M13.5 5.5l-3 13" />
+    </Icon>
+  );
+}
+
+// ── Appearance ──────────────────────────────────────────────────────────────
+// The two marks on the theme control. Drawn here rather than reached for as
+// ☀️ / 🌙 for the reason this whole file exists: an emoji is a font glyph the
+// OS picks, and the one place it would have landed is a control that is *about*
+// how the site looks. They are also never alone — every ThemeToggle segment
+// carries the word beside the mark, so nothing here has to be recognised on
+// its own (Lecture 6, guideline 4).
+
+export function SunIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4" />
+    </Icon>
+  );
+}
+
+export function MoonIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.5 8.5 0 1 0 10.2 10.2" />
     </Icon>
   );
 }

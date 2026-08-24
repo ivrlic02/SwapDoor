@@ -9,6 +9,7 @@ import { SearchFields, SearchGlyph } from "@/components/search-fields";
 import { buttonClass } from "@/components/button";
 import { UserMenu } from "@/components/user-menu";
 import { MobileAccount } from "@/components/mobile-account";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useProfile } from "@/components/profile-context";
 import { DoorMark } from "@/components/brand";
 import {
@@ -212,7 +213,7 @@ export function Navigation() {
               icon set in a 44px square (Fitts, L3; CRAP repetition, L5). */}
           <button
             type="button"
-            className="-mr-2 grid size-11 shrink-0 place-items-center rounded-xl text-fg transition hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+            className="-mr-2 grid size-11 shrink-0 place-items-center rounded-xl text-fg transition hover:bg-tint/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
             aria-label="Open menu"
             aria-expanded={open}
             aria-controls="mobile-drawer"
@@ -262,10 +263,18 @@ export function Navigation() {
         )}
       </header>
 
-      {/* Click-away backdrop for the docked search drop-down. */}
+      {/* Click-away backdrop for the docked search drop-down.
+          `shade` and not `black`: this is a catcher, not a modal scrim, and 20%
+          black was chosen against a near-black page where it is barely there.
+          On a white one the same value dims the whole site and makes an
+          ordinary drop-down look like a dialog. The token carries the alpha
+          down to ~11% in the light theme, so the hint reads the same either
+          way. The genuinely modal backdrops — the drawer, the mobile sheets,
+          the lightbox — stay `black`, because a modal SHOULD darken the page
+          and it should do it in both themes. */}
       {dropOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20"
+          className="fixed inset-0 z-40 bg-shade/20"
           aria-hidden
           onClick={closeDock}
         />
@@ -299,7 +308,7 @@ export function Navigation() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className={`absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col overflow-y-auto overscroll-contain border-l border-border bg-surface px-5 pt-4 shadow-2xl shadow-black/50 motion-safe:transition-transform motion-safe:duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            className={`absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col overflow-y-auto overscroll-contain border-l border-border bg-surface px-5 pt-4 shadow-2xl shadow-shade/50 motion-safe:transition-transform motion-safe:duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
               drawer.entered ? "translate-x-0" : "translate-x-full"
             }`}
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
@@ -313,7 +322,7 @@ export function Navigation() {
                 type="button"
                 aria-label="Close menu"
                 onClick={() => setOpen(false)}
-                className="-mr-2 grid size-11 place-items-center rounded-xl text-muted transition hover:bg-white/[0.07] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="-mr-2 grid size-11 place-items-center rounded-xl text-muted transition hover:bg-tint/[0.07] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <CloseIcon className="size-5" />
               </button>
@@ -353,6 +362,23 @@ export function Navigation() {
             >
               List Your Home
             </Link>
+
+            {/* Appearance, on the drawer rather than only in the footer. The
+                footer is the control's home, but on a phone it is several
+                screens of scrolling away on every page, and the account menu
+                copy only exists for someone signed in — so on the one surface
+                that is both always reachable and always present, it goes here.
+                Above the account block on purpose: sign out is the exit and
+                stays last (Nielsen #4). */}
+            {/* `mb-5` because what follows it, signed out, is <MobileAccount>'s
+                bare "Sign In" button — which carries no top margin of its own,
+                since until now nothing rendered above it but a button that did.
+                Without the gap a preference row and a primary action read as one
+                block (proximity, Lecture 5). Signed in, MobileAccount opens with
+                its own rule and padding, so this just gives that rule air. */}
+            <div className="mt-5 mb-5 border-t border-border pt-5">
+              <ThemeToggle label="Appearance" />
+            </div>
 
             {/* No dropdown on a phone — the drawer IS the menu, so the same
                 account rows render inline under an identity header. */}
@@ -432,7 +458,7 @@ function DrawerLink({
       className={`-mx-3 flex min-h-13 items-center gap-3 rounded-xl px-3 text-base transition ${
         current
           ? "bg-brand/10 font-semibold text-fg"
-          : "text-muted hover:bg-white/[0.05] hover:text-fg"
+          : "text-muted hover:bg-tint/[0.05] hover:text-fg"
       }`}
     >
       <span aria-hidden className={`shrink-0 ${current ? "text-accent" : "text-muted"}`}>
@@ -523,7 +549,7 @@ function SearchPill({
       aria-expanded={false}
       className={`flex w-full min-w-0 ${
         wide ? "max-w-[580px]" : "max-w-[460px]"
-      } items-center gap-3 rounded-full border border-border-raised bg-surface-raised py-2 pl-6 pr-2 text-[15px] shadow-lg shadow-black/10 hover:-translate-y-0.5 hover:border-muted/50 hover:shadow-xl hover:shadow-black/25 active:translate-y-0 active:scale-[0.99] motion-safe:transition-all motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
+      } items-center gap-3 rounded-full border border-border-raised bg-surface-raised py-2 pl-6 pr-2 text-[15px] shadow-lg shadow-shade/10 hover:-translate-y-0.5 hover:border-muted/50 hover:shadow-xl hover:shadow-shade/25 active:translate-y-0 active:scale-[0.99] motion-safe:transition-all motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
         entered
           ? "opacity-100 [clip-path:inset(0_0_0_0)]"
           : "opacity-0 [clip-path:inset(0_100%_0_0)]"
@@ -571,7 +597,7 @@ function SwapPill({
       onClick={onClick}
       aria-label={`Open swap options for ${data.home}`}
       aria-expanded={false}
-      className={`flex w-full min-w-0 max-w-[620px] items-center gap-3 rounded-full border border-border-raised bg-surface-raised py-2 pl-5 pr-2 text-[15px] shadow-lg shadow-black/10 hover:-translate-y-0.5 hover:border-muted/50 hover:shadow-xl hover:shadow-black/25 active:translate-y-0 active:scale-[0.99] motion-safe:transition-all motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
+      className={`flex w-full min-w-0 max-w-[620px] items-center gap-3 rounded-full border border-border-raised bg-surface-raised py-2 pl-5 pr-2 text-[15px] shadow-lg shadow-shade/10 hover:-translate-y-0.5 hover:border-muted/50 hover:shadow-xl hover:shadow-shade/25 active:translate-y-0 active:scale-[0.99] motion-safe:transition-all motion-safe:duration-[380ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
         entered
           ? "opacity-100 [clip-path:inset(0_0_0_0)]"
           : "opacity-0 [clip-path:inset(0_100%_0_0)]"

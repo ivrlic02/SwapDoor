@@ -39,6 +39,17 @@
   --color-brand-hover: #2f6fe0; /* brand hover */
   --color-accent: #63b3ed;      /* light "door" blue — eyebrows, stats, highlights */
 
+  /* The door panel in the logo, and ONLY that: the animated nav mark, and the
+     mascot glyph wherever it is drawn (components/brand.tsx). Identical to
+     `accent` here, which is where it came from — it is split out because the
+     two have different jobs the moment there is a second theme. `accent` is
+     text (eyebrows, links, step numbers) and has to satisfy a contrast floor
+     against the page; the door is a SHAPE inside a `brand`-coloured frame, and
+     what it has to satisfy is the brand itself — "dark blue wordmark, light
+     blue door accent" (Overview §2). Held to the text floor it goes dark, the
+     frame and the panel converge, and the mark stops reading as a door at all. */
+  --color-door: #63b3ed;
+
   --color-success: #34c77b;     /* verified / positive status */
   --color-danger: #f05252;      /* errors / destructive */
   --color-selected: #f59e0b;    /* selected map pin — amber; blue↔orange is the
@@ -49,6 +60,184 @@
                                    is blue-monochrome and already spends its one
                                    sanctioned exception on amber, so the warm
                                    glow costs nothing it hasn't already paid */
+
+  /* Two tokens that exist ONLY so the light theme can retune them. Neither is a
+     colour anybody picks off a palette; each is the ink a *depth* effect is
+     drawn with, and depth is the one thing that does not survive a theme swap
+     unchanged (Lecture 6: vision reads contrast, not absolute brightness — the
+     same black at the same alpha is a soft lift on a dark page and a bruise on
+     a white one).
+
+     `shade` is the shadow ink, used as `shadow-shade/NN`. Pure black here; in
+     the light theme it is *already* translucent, and Tailwind's `/NN` modifier
+     multiplies into that (a color-mix against transparent), so every shadow on
+     the site is softened by editing one number instead of twenty-one classes.
+
+     `tint` is the wash a hover lays over a bare control — `bg-tint/[0.07]` on
+     the drawer trigger, the drawer's close button, the drawer links and the
+     search bar's segments. On a dark surface a hover must add light; on a light
+     one it must take light away, and it is the same four rules either way. */
+  --color-shade: #000000;
+  --color-tint: #ffffff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE LIGHT THEME
+   ───────────────────────────────────────────────────────────────────────────
+   Everything above is the dark theme, which stays the site's default and is
+   the one every screenshot in AI/project/Handoff.md was taken against. This
+   block is the same design re-lit, not a second design: every token keeps its
+   ROLE (`bg` is still the 60%, `surface` the 30%, `brand`/`accent` the 10%
+   accent), and the palette stays the blue monochrome Lecture 6 recommends —
+   what follows are shades of the same hue, not new hues.
+
+   It is selected by `data-theme="light"` on <html>, set before first paint by
+   the inline script in app/layout.tsx and flipped by <ThemeToggle>. The
+   attribute outranks the bare `:root` that @theme emits (0,2,0 against 0,1,0),
+   and that is the entire mechanism: no component ever learns there are two
+   themes — they go on asking for `bg-surface` and `text-muted`.
+
+   Contrast measured rather than eyeballed (WCAG 2.1 relative luminance, on
+   `bg`): fg 14.6:1 · muted 5.2:1 · accent 4.7:1 · brand 5.3:1 · success 5.3:1 ·
+   danger 5.0:1 · white-on-brand 6.1:1. The dark theme's own muted measures
+   4.99:1, so both themes are held to one floor rather than the new one being
+   waved through.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Which scheme the *browser* draws its own widgets for — scrollbars, the
+   colour and file pickers, any control the page has not styled. Before light
+   mode this lived in the mobile block at the bottom of this file, scoped to
+   `max-width: 1023.98px`, with a note calling the move to `:root` "a one-line
+   change when wanted". A second theme is when: the unchecked checkbox that
+   prompted it is a white square on a dark page, and left here it would be a
+   dark square on a white one. */
+:root {
+  color-scheme: dark;
+
+  /* The hero globe's two decoration greys, in their dark-theme values.
+     Plain custom properties rather than @theme tokens because no utility class
+     ever draws them — only the canvas does, through getComputedStyle
+     (components/globe.tsx).
+
+     They live HERE, above the light block, and not below it next to the values
+     they pair with. `:root` and `:root[data-theme="light"]` are close enough in
+     specificity that the order of the two rules is doing real work, and a
+     default that sits *after* its own override is a rule that wins the moment a
+     minifier normalises either selector. Above it, the override wins on both
+     counts and nothing depends on which. */
+  --globe-land: #c6d0e0;
+  --globe-limb: #5e6b85;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* The neutral ramp. Note the page does NOT go to pure white: a #ffffff page
+     behind #ffffff cards has no ramp left to spend on elevation, and the whole
+     reason `surface-raised` exists is that the site's primary control has to
+     read as sitting ON the page rather than in it. So the page is a soft
+     blue-tinted grey and white is kept for the things that lift off it — which
+     is also how every product this one is measured against (Airbnb, Booking)
+     arranges it, so it costs nothing in external consistency (Nielsen #2). */
+  --color-bg: #eaeff7;          /* page background — soft, blue-tinted off-white */
+  --color-surface: #ffffff;     /* cards, nav, inputs — white lifts off the page */
+  --color-surface-2: #dfe6f2;   /* alternating sections + the footer: one step DOWN
+                                   from the page, mirroring how surface-2 sits one
+                                   step down from bg in the dark theme */
+  --color-border: #ccd7e8;      /* hairlines, outlines */
+
+  /* In the dark theme `surface-raised` is a lighter slate than `surface`,
+     because "raised" there means "nearer the light". Here the ramp is inverted
+     and white is already its top, so raised and surface share a value and the
+     lift is carried by the shadow and a stronger hairline instead. That is the
+     same rule (elevation is whatever reads as nearer the light source) applied
+     to a page lit from the other end — and it is why `border-raised` is a
+     clear step DARKER here where it is a clear step lighter above. */
+  --color-surface-raised: #ffffff;
+  --color-border-raised: #a9bad6;
+
+  --color-fg: #131c33;          /* primary text — 14.6:1 on bg */
+  --color-muted: #55637f;       /* secondary text — 5.2:1, clears AA */
+
+  /* The blues move DOWN the same hue, not sideways: #3b82f6 on a dark page and
+     #2158d8 on a light one are one blue at two lightnesses (Lecture 6, shades
+     of a single hue), which is what keeps the brand recognisable across the
+     switch. They have to move — #3b82f6 as text on #eaeff7 measures 3.1:1, and
+     the eyebrows, links and step numbers drawn in `accent` are text. */
+  --color-brand: #2158d8;
+  --color-brand-hover: #1a49b8;
+  --color-accent: #1668c9;
+
+  /* Not darkened with the others, for the reason given beside the token: it is
+     a shape, not text, and it has to stay the lighter half of the pair or the
+     logo loses the idea it is built on. Measured against its own frame rather
+     than against the page — #7cb0f2 on the #2158d8 jamb is the same figure/
+     ground relationship the dark theme has, from the other end. */
+  --color-door: #7cb0f2;
+
+  --color-success: #12703b;
+  --color-danger: #c62020;
+
+  /* The palette's one sanctioned exception stays an exception, and stays
+     amber: blue↔orange is the colour-blind-safe high-contrast pair (Lecture 6,
+     guideline 3), and that argument does not care which way round the page is.
+     Both are darkened for the pale ground — #f59e0b is a 2.0:1 map pin on
+     light tiles, i.e. a selected pin nobody can find. */
+  --color-selected: #d97706;
+  --color-doorlight: #fde3b0;
+
+  /* Shadow ink, already translucent so `/NN` lands where a light UI wants it:
+     `shadow-shade/50` (a dropdown) resolves to alpha 0.28 and `shadow-shade/20`
+     (a card) to 0.11, instead of 0.50 and 0.20 of pure black. */
+  --color-shade: rgb(15 23 42 / 0.55);
+  --color-tint: #131c33;        /* a hover now removes light instead of adding it */
+
+  /* The hero globe's two decoration greys (components/globe.tsx reads these at
+     mount, and again when the theme changes). Same job as in the dark theme —
+     land carries the contrast, the limb ring is the quieter tone — with the
+     pair flipped end for end, because on a pale page it is the DARKER mark
+     that reads as figure. */
+  --globe-land: #4e5b78;
+  --globe-limb: #7c89a6;
+}
+
+
+/* Artwork whose colours are baked in ships as two files, and the wrong one is
+   switched off. Today that is exactly one thing: the hero mascot, whose three
+   tones are burnt into the PNG by scripts/derive-mascot.mjs. A CSS filter was
+   considered and rejected for the same reason that script exists at all — a
+   filter shifts both tones together and could never keep the door reading as
+   the more prominent of the two.
+
+   These outrank Tailwind's own `lg:block` on the mascot (0,3,0 against 0,1,0),
+   which is the point: the wrong copy has to stay hidden at every width. */
+:root[data-theme="light"] .theme-dark-only {
+  display: none;
+}
+:root:not([data-theme="light"]) .theme-light-only {
+  display: none;
+}
+
+/* Which half of <ThemeToggle> looks selected — decided here, off the same
+   attribute the palette hangs off, rather than in React.
+   ────────────────────────────────────────────────────────────────────────────
+   The component renders the server's snapshot during hydration (that is what
+   useSyncExternalStore is *for*), so on a light visitor's first paint React
+   still believes Dark is selected and corrects itself a tick later. On the page
+   that is invisible, because CSS painted it light before React existed. On this
+   one control it is the whole message: a filled "Dark" segment sitting on a
+   white page. Taking the fill from `data-theme` means the control cannot
+   disagree with the page it is describing, at any point in the load.
+
+   `aria-pressed` stays React's, since an attribute cannot be painted by CSS. */
+.theme-toggle [data-theme-option] {
+  color: var(--color-muted);
+  background: transparent;
+}
+:root:not([data-theme="light"]) .theme-toggle [data-theme-option="dark"],
+:root[data-theme="light"] .theme-toggle [data-theme-option="light"] {
+  background: var(--color-brand);
+  color: #fff;
 }
 
 body {
@@ -194,7 +383,7 @@ input.range-brand::-webkit-slider-thumb {
   border-radius: 9999px;
   background: var(--color-brand);
   border: 3px solid var(--color-surface);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--color-shade) 40%, transparent);
   cursor: pointer;
 }
 input.range-brand::-moz-range-thumb {
@@ -203,7 +392,7 @@ input.range-brand::-moz-range-thumb {
   border-radius: 9999px;
   background: var(--color-brand);
   border: 3px solid var(--color-surface);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--color-shade) 40%, transparent);
   cursor: pointer;
 }
 input.range-brand:focus-visible::-webkit-slider-thumb {
@@ -428,7 +617,7 @@ input.range-brand:focus-visible::-moz-range-thumb {
   position: absolute;
   inset: var(--dm-border);
   border-radius: calc(var(--dm-radius) * 0.6);
-  background: var(--color-accent);
+  background: var(--color-door);
   transform-origin: left center;
   transition: transform var(--dm-time) var(--dm-ease), filter var(--dm-time) var(--dm-ease);
 }
@@ -498,20 +687,11 @@ input.range-brand:focus-visible::-moz-range-thumb {
    desktop rendering is provably untouched — nothing here can reach it.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 1023.98px) {
-  /* Native controls follow the OS, not the page, unless the page declares
-     which scheme it is drawn for. Without this, an unchecked checkbox in the
-     "What does it offer?" grid renders as a white square — on a phone, several
-     white squares are the brightest thing on the screen and they mark the
-     options that are *off*, so the strongest contrast on the page points at the
-     least important state (Lecture 5: contrast has to mark what matters). It
-     also puts the last white surfaces back on the theme (Nielsen #2).
-
-     Deliberately scoped to this block, like everything else here: the same is
-     true above `lg`, but the brief for this pass was to leave the desktop
-     rendering exactly as it was. It is a one-line move to `:root` when wanted. */
-  :root {
-    color-scheme: dark;
-  }
+  /* `color-scheme` used to be set here, scoped to this block, with a note that
+     moving it to `:root` was "a one-line move when wanted". The light-mode pass
+     wanted it: it now sits at the top of this file beside the theme tokens and
+     follows `data-theme`, so native controls track the theme at every width
+     rather than only below `lg`. */
 
   /* The reviews marquee stops moving and becomes a swipeable strip.
      ─────────────────────────────────────────────────────────────────────────
@@ -591,7 +771,7 @@ input.range-brand:focus-visible::-moz-range-thumb {
   .leaflet-container.leaflet-touch .leaflet-bar,
   .leaflet-container.leaflet-container .leaflet-bar {
     border: 1px solid var(--color-border);
-    box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-shade) 35%, transparent);
   }
   /* The attribution strip is a white bar on the same dark map. */
   .leaflet-container .leaflet-control-attribution.leaflet-control-attribution {

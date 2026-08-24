@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Lockup, MascotGlyph } from "@/components/brand";
 import { FooterAccount } from "@/components/footer-account";
 import { footerLinkClass } from "@/components/footer-link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // The site footer.
 //
@@ -123,8 +124,16 @@ export function Footer() {
         </nav>
       </div>
 
-      {/* The bottom bar: the three things that belong under a rule rather than
-          in a column — who made it, the legal pages, and the way back up. */}
+      {/* The bottom bar: the four things that belong under a rule rather than
+          in a column — who made it, the legal pages, the way back up, and the
+          one preference the site has.
+
+          The theme control is its own group at the far end rather than another
+          item in the link row, because it is not a destination and grouping it
+          with three of those would say it was (proximity, Lecture 5). This is
+          also the footer's *primary* home, not a duplicate of the one in the
+          account menu: the footer is on every route in both auth states, so a
+          signed-out visitor — most of them — can still find it. */}
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
           <p>
@@ -156,6 +165,8 @@ export function Footer() {
               <span aria-hidden>↑</span> Back to top
             </a>
           </div>
+
+          <ThemeToggle label="Appearance" className="sm:shrink-0" />
         </div>
       </div>
     </footer>

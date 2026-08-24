@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { addBasemap } from "@/components/map-basemap";
 
 // "Where you'll be" — a single-listing map for the detail page.
 //
@@ -38,11 +39,7 @@ export default function HouseMap({
       zoomControl: true,
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
-    }).addTo(map);
+    const unfollowTheme = addBasemap(map);
 
     L.circle([lat, lng], {
       radius: 700,
@@ -64,6 +61,7 @@ export default function HouseMap({
 
     return () => {
       clearTimeout(measure);
+      unfollowTheme();
       map.remove();
       mapRef.current = null;
     };

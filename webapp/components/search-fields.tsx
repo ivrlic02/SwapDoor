@@ -1,16 +1,38 @@
 "use client";
 
 import {
+  Fragment,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
-import { useHomeSearch, whenSummary } from "./home-search-context";
+import {
+  CLEARED_PLACE,
+  placeValues,
+  useHomeSearch,
+  whenSummary,
+} from "./home-search-context";
 import { Calendar, nightsBetween, todayISO } from "./calendar";
-import type { Destination } from "@/lib/houses";
+import { ClockIcon, GlobeIcon, HomeIcon, LocateIcon } from "./icons";
+import type { CountryStat, Destination } from "@/lib/houses";
+import {
+  distanceKm,
+  EMPTY_PLACE,
+  normalizePlaceQuery,
+  type PlaceFilter,
+} from "@/lib/place-filter";
+import {
+  clearRecentPlaces,
+  getRecentPlaces,
+  getRecentPlacesServer,
+  rememberPlace,
+  subscribeRecentPlaces,
+} from "@/lib/recent-places";
 import { searchCitiesGlobal, type GlobalCity } from "@/lib/places";
 
 type Seg = "where" | "when" | "who";
@@ -19,7 +41,7 @@ type Seg = "where" | "when" | "who";
 // small, plain-language popover. Big targets, few choices (Hick's law), verified
 // framing throughout. Shared by the hero and the nav drop-down.
 export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
-  const { values, setValues, submit, destinations } = useHomeSearch();
+  const { values, setValues, submit, destinations, countries } = useHomeSearch();
   const [open, setOpen] = useState<Seg | null>(null);
 
   const rootRef = useRef<HTMLFormElement>(null);
@@ -62,7 +84,7 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         submit();
       }}
       className={[
-        "flex text-left shadow-xl shadow-black/20 transition-colors",
+        "flex text-left shadow-xl shadow-shade/20 transition-colors",
         // The HERO keeps its stacked-on-phones bar: it is the whole point of
         // that screen, it has the room, and three labelled rows read clearly.
         //
@@ -143,11 +165,17 @@ export function SearchFields({ variant }: { variant: "hero" | "compact" }) {
         <Popover anchorRef={whereRef} width={400}>
           <WherePanel
             destinations={destinations}
+            countries={countries}
             value={values.where}
-            onType={(t) => setValues({ where: t })}
-            onPick={(city) => {
-              setValues({ where: city });
-              setOpen("when");
+            // Typing invalidates a previous pick: the city/country/code that
+            // came with it no longer describe what is in the box, and leaving
+            // them behind would widen an empty result to the wrong country.
+            onType={(t) => setValues({ ...CLEARED_PLACE, where: t })}
+            onPick={(place, advance = true) => {
+              setValues(placeValues(place));
+              // "Near me" passes false: it picked the city for you, so the
+              // panel stays open long enough to say which one and why.
+              if (advance) setOpen("when");
             }}
             onEnter={() => setOpen("when")}
           />
@@ -230,13 +258,13 @@ function Segment({
             ? "items-center gap-1 px-2.5 py-2.5 sm:flex-col sm:items-stretch sm:gap-0 sm:px-4 sm:py-1.5"
             : "flex-col px-4 py-1.5",
           active
-            ? "bg-surface-raised shadow-xl shadow-black/40 ring-1 ring-brand/50"
+            ? "bg-surface-raised shadow-xl shadow-shade/40 ring-1 ring-brand/50"
             : anyOpen
               ? "opacity-60 group-hover:opacity-100"
               // Hover LIGHTENS now. It used to darken (`bg-bg/70`), which on a
               // bar that is itself raised would read as the cell sinking away
               // from the pointer rather than responding to it.
-              : "group-hover:bg-white/[0.07]",
+              : "group-hover:bg-tint/[0.07]",
         ].join(" ")}
       >
         {/* The icon is the resting-state signifier. Without one these cells were
@@ -369,7 +397,7 @@ function Popover({
         <div className="fixed inset-0 z-[59] bg-black/50" aria-hidden />
         <div
           data-search-popover
-          className="swap-sheet fixed inset-x-0 bottom-0 z-[60] max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface p-4 text-fg shadow-2xl shadow-black/50"
+          className="swap-sheet fixed inset-x-0 bottom-0 z-[60] max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface p-4 text-fg shadow-2xl shadow-shade/50"
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           <div aria-hidden className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" />
@@ -384,7 +412,7 @@ function Popover({
     <div
       data-search-popover
       style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-      className="z-[60] max-h-[70vh] overflow-auto rounded-2xl border border-border bg-surface p-3 text-fg shadow-2xl shadow-black/50"
+      className="z-[60] max-h-[70vh] overflow-auto rounded-2xl border border-border bg-surface p-3 text-fg shadow-2xl shadow-shade/50"
     >
       {children}
     </div>,
@@ -393,23 +421,107 @@ function Popover({
 }
 
 // ── Where ───────────────────────────────────────────────────────────────────
+// A real combobox, and four ways in instead of one.
+//
+// **What it was.** A plain `<input>` over a list of `<button>`s. No `role`, no
+// `aria-activedescendant`, no arrow keys, and Enter skipped to "When" rather
+// than choosing the row under the cursor — so a keyboard user could read the
+// suggestions and not take one. Meanwhile components/suggest-input.tsx, the
+// picker the listing form uses for exactly this job, is a full combobox. One
+// site, two destination pickers, two behaviours (Nielsen #2; CRAP repetition).
+//
+// **What a pick threw away.** `onPick` stored the bare city name, so the
+// country died on the click — which is why a search for a city nobody hosts in
+// could only ever end on "no homes match your filters". A row now hands over a
+// whole `PlaceFilter`, and Explore can widen to the country instead of stopping
+// (see `NoHomesHere` in explore-view.tsx).
+//
+// **The three new groups** answer a person who has no city in mind — Persona 3
+// (Mateo & Elena) plans a trip by region, not by address, and Persona 1 travels
+// wherever the work allows. Four labelled groups of a few rows each is Hick's
+// prescribed shape ("restructure into groups"), not a longer list.
+//
+// One deliberate difference from suggest-input.tsx: there the row is a
+// `<button>` inside `role="option"`, which makes every suggestion a tab stop
+// and announces each row twice. Here the `<li>` *is* the option, focus stays in
+// the input, and `aria-activedescendant` does the announcing — the shape the
+// ARIA combobox pattern actually specifies. suggest-input should follow; it is
+// used in the publish flow, so it was left for a pass that can re-verify it.
+
+/** One row. `place` is what a click commits; `action` rows resolve first. */
+type WhereOption = {
+  id: string;
+  label: string;
+  hint?: string;
+  leading: React.ReactNode;
+  place: PlaceFilter | null;
+  action?: "near";
+};
+
+type WhereGroup = { key: string; title: string | null; options: WhereOption[] };
+
+/** A tinted, fixed-size chip so an icon, a flag and a bare "HR" all line up. */
+function RowChip({
+  children,
+  tone = "muted",
+}: {
+  children: React.ReactNode;
+  tone?: "brand" | "muted";
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`grid size-9 shrink-0 place-items-center rounded-lg text-xs font-semibold leading-none ${
+        tone === "brand" ? "bg-brand/15 text-accent" : "bg-surface-2 text-muted"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function WherePanel({
   destinations,
+  countries,
   value,
   onType,
   onPick,
   onEnter,
 }: {
   destinations: Destination[];
+  countries: CountryStat[];
   value: string;
   onType: (t: string) => void;
-  onPick: (city: string) => void;
+  onPick: (place: PlaceFilter, advance?: boolean) => void;
   onEnter: () => void;
 }) {
-  const q = value.trim().toLowerCase();
-  const list = q
-    ? destinations.filter((d) => `${d.city} ${d.country}`.toLowerCase().includes(q))
-    : destinations;
+  const listId = useId();
+  const listRef = useRef<HTMLUListElement>(null);
+  // The highlight is stored WITH the list it belongs to, so it resets during
+  // render when the answers change instead of in an effect. Leaving a stale
+  // index parked would silently move the highlight onto a row nobody looked at,
+  // and Enter would then commit that one. (Same shape as the `usePresence`
+  // set-state-in-effect fix on 2026-08-18 — derive, don't synchronise.)
+  const [highlight, setHighlight] = useState<{ key: string; index: number }>({
+    key: "",
+    index: -1,
+  });
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [nearNote, setNearNote] = useState<string | null>(null);
+
+  // localStorage as an external store, not "read it in an effect": see the
+  // note in lib/recent-places.ts. Server render gets a stable empty list, so
+  // there is nothing to hydrate-mismatch.
+  const recent = useSyncExternalStore(
+    subscribeRecentPlaces,
+    getRecentPlaces,
+    getRecentPlacesServer
+  );
+
+  const q = value.trim();
+  const nq = normalizePlaceQuery(q);
+  const typing = q !== "";
 
   // Everywhere else on earth, from the same `cities` table the listing form
   // picks from. Before this, the only searchable places were the handful of
@@ -417,7 +529,262 @@ function WherePanel({
   // matches", which reads as *the search is broken*, not as *nobody has listed
   // there yet* (Nielsen #1: say what actually happened). Now the city is found,
   // and the empty result that follows is honestly about the listings.
-  const elsewhere = useGlobalCities(value, list);
+  // Typed: every match. Untyped: the eight most-offered, which is what this
+  // list has always shown — the cap is a display decision (Hick), and it lives
+  // here rather than in the data so `locateMe` below can still see all of them.
+  const cityMatches = typing
+    ? destinations.filter((d) => normalizePlaceQuery(`${d.city} ${d.country}`).includes(nq))
+    : destinations.slice(0, 8);
+  const elsewhere = useGlobalCities(value, cityMatches);
+
+  const countryMatches = typing
+    ? countries.filter((c) => normalizePlaceQuery(c.name).includes(nq))
+    : countries.slice(0, 6);
+
+  const groups: WhereGroup[] = [];
+
+  // 1. The two answers that need no typing at all. Hidden once someone starts
+  //    typing: they have said what they want, and a shortcut competing with
+  //    their own words is the clutter Nielsen #9 is about.
+  if (!typing) {
+    groups.push({
+      key: "quick",
+      title: null,
+      options: [
+        {
+          id: "near",
+          label: locating ? "Locating…" : "Near me",
+          hint: "Closest place with homes to swap",
+          leading: (
+            <RowChip tone="brand">
+              <LocateIcon className="size-4" />
+            </RowChip>
+          ),
+          place: null,
+          action: "near",
+        },
+        {
+          id: "anywhere",
+          label: "Anywhere",
+          hint: "Every home on SwapDoor",
+          leading: (
+            <RowChip tone="brand">
+              <GlobeIcon className="size-4" />
+            </RowChip>
+          ),
+          place: EMPTY_PLACE,
+        },
+      ],
+    });
+
+    if (recent.length > 0) {
+      groups.push({
+        key: "recent",
+        title: "Recent",
+        options: recent.map((p, i) => ({
+          id: `recent-${i}`,
+          label: p.text,
+          leading: (
+            <RowChip>
+              <ClockIcon className="size-4" />
+            </RowChip>
+          ),
+          place: p,
+        })),
+      });
+    }
+  }
+
+  // 2. Inventory, most specific first: a city somebody is actually offering a
+  //    home in is a better answer than a country, which is a better answer than
+  //    a gazetteer entry (Lecture 5 — the more useful group gets the stronger
+  //    position). The order does not change between the empty and typed states,
+  //    so the panel never rearranges itself under the pointer.
+  if (cityMatches.length > 0) {
+    groups.push({
+      key: "cities",
+      title: "Homes to swap here",
+      options: cityMatches.map((d) => ({
+        id: `city-${d.city}-${d.country}`,
+        label: `${d.city}, ${d.country}`,
+        hint: `${d.count} ${d.count === 1 ? "home" : "homes"} to swap`,
+        leading: (
+          <RowChip tone="brand">
+            <HomeIcon className="size-4" />
+          </RowChip>
+        ),
+        place: {
+          text: `${d.city}, ${d.country}`,
+          city: d.city,
+          country: d.country,
+          countryCode: d.countryCode ?? "",
+        },
+      })),
+    });
+  }
+
+  if (countryMatches.length > 0) {
+    groups.push({
+      key: "countries",
+      title: "Whole country",
+      options: countryMatches.map((c) => ({
+        id: `country-${c.code ?? c.name}`,
+        label: c.name,
+        hint: `${c.count} ${c.count === 1 ? "home" : "homes"} to swap`,
+        leading: <RowChip>{c.code ?? c.name.slice(0, 2).toUpperCase()}</RowChip>,
+        place: { text: c.name, city: "", country: c.name, countryCode: c.code ?? "" },
+      })),
+    });
+  }
+
+  if (elsewhere.rows.length > 0) {
+    groups.push({
+      key: "elsewhere",
+      title: "Anywhere else",
+      options: elsewhere.rows.map((c) => ({
+        id: `global-${c.id}`,
+        label: `${c.name}, ${c.countryName}`,
+        hint: c.admin1 ?? "Search homes here",
+        // The flags are regional-indicator pairs and Windows ships no glyph for
+        // them — it renders the two letters. The chip is sized either way, so
+        // it reads as a country-code badge there and holds the flag elsewhere.
+        leading: <RowChip>{c.emoji}</RowChip>,
+        place: {
+          text: `${c.name}, ${c.countryName}`,
+          city: c.name,
+          country: c.countryName,
+          countryCode: c.countryCode,
+        },
+      })),
+    });
+  }
+
+  const flat = groups.flatMap((g) => g.options);
+  // Identity of the current answer set. Any change to it drops the highlight.
+  const listKey = `${nq}|${flat.map((o) => o.id).join("|")}`;
+  const activeIndex = highlight.key === listKey ? highlight.index : -1;
+  const active = activeIndex >= 0 && activeIndex < flat.length ? flat[activeIndex] : null;
+  const setActiveIndex = (index: number) => setHighlight({ key: listKey, index });
+
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    listRef.current
+      ?.querySelector(`[data-index="${activeIndex}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
+
+  function choose(option: WhereOption) {
+    if (option.action === "near") {
+      locateMe();
+      return;
+    }
+    if (option.place) commit(option.place);
+  }
+
+  function commit(place: PlaceFilter) {
+    setNearNote(null);
+    setGeoError(null);
+    if (place.text.trim()) rememberPlace(place);
+    onPick(place);
+  }
+
+  // "Near me" answers with a destination that HAS homes, not with a radius.
+  // A radius can legitimately contain nothing, and a shortcut that can return
+  // an empty result reads as broken (Nielsen #1) — this way the answer is
+  // always a real place, and the note says how far it is so the number is the
+  // user's to judge rather than ours to hide.
+  function locateMe() {
+    if (!("geolocation" in navigator)) {
+      setGeoError("Geolocation isn't supported by your browser.");
+      return;
+    }
+    const mappable = destinations.flatMap((d) =>
+      typeof d.lat === "number" && typeof d.lng === "number"
+        ? [{ ...d, lat: d.lat, lng: d.lng }]
+        : []
+    );
+    if (mappable.length === 0) {
+      setGeoError("No mapped destinations to compare against yet.");
+      return;
+    }
+    setLocating(true);
+    setGeoError(null);
+    setNearNote(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        let best = mappable[0];
+        let bestKm = distanceKm(me, best);
+        for (const d of mappable.slice(1)) {
+          const km = distanceKm(me, d);
+          if (km < bestKm) {
+            best = d;
+            bestKm = km;
+          }
+        }
+        const place: PlaceFilter = {
+          text: `${best.city}, ${best.country}`,
+          city: best.city,
+          country: best.country,
+          countryCode: best.countryCode ?? "",
+        };
+        rememberPlace(place);
+        // Deliberately does NOT advance to "When" like a typed pick does. The
+        // panel chose this city on the user's behalf, so it stays open long
+        // enough to say which one and why (Nielsen #3, and Lecture 3's
+        // evaluation side: "what happened?" answered before the next step).
+        setNearNote(
+          `Closest to you: ${best.city}, ${best.country} — about ${Math.round(bestKm).toLocaleString()} km away.`
+        );
+        onPick(place, false);
+      },
+      () => {
+        setLocating(false);
+        setGeoError("Couldn't get your location — check your browser permissions.");
+      },
+      { enableHighAccuracy: false, timeout: 8000 }
+    );
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (flat.length === 0) return;
+      e.preventDefault();
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      const from = activeIndex < 0 ? (step === 1 ? -1 : 0) : activeIndex;
+      setActiveIndex((from + step + flat.length) % flat.length);
+      return;
+    }
+    if (e.key === "Home" && flat.length > 0) {
+      e.preventDefault();
+      setActiveIndex(0);
+      return;
+    }
+    if (e.key === "End" && flat.length > 0) {
+      e.preventDefault();
+      setActiveIndex(flat.length - 1);
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // A highlighted row wins; otherwise Enter means "I have typed enough" and
+      // moves on, which is what it has always done here.
+      if (active) choose(active);
+      else onEnter();
+    }
+  }
+
+  // Announced, not just drawn: a sighted user sees the list grow, a screen
+  // reader user gets this line (Nielsen #3 on a control that answers over the
+  // network).
+  const status = elsewhere.loading
+    ? "Searching…"
+    : flat.length === 0
+      ? "No place by that name — try another spelling."
+      : `${flat.length} ${flat.length === 1 ? "suggestion" : "suggestions"}`;
+
+  let index = -1;
 
   return (
     <div>
@@ -429,85 +796,94 @@ function WherePanel({
           autoFocus
           value={value}
           onChange={(e) => onType(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onEnter();
-            }
-          }}
-          placeholder="Type a city"
+          onKeyDown={onKeyDown}
+          placeholder="Type a city or country"
+          role="combobox"
+          aria-expanded
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={active ? `${listId}-${activeIndex}` : undefined}
           className="w-full bg-transparent text-sm text-fg outline-none placeholder:text-muted"
         />
       </div>
 
-      {list.length > 0 && (
-        <p className="px-1 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
-          Homes to swap here
+      {nearNote && (
+        <p className="mt-2 rounded-xl bg-brand/10 px-3 py-2 text-xs leading-relaxed text-fg">
+          {nearNote}
         </p>
       )}
-      <ul>
-        {list.map((d) => (
-          <li key={`${d.city}-${d.country}`}>
-            <button
-              type="button"
-              onClick={() => onPick(d.city)}
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-bg"
-            >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand/15 text-base">
-                🏠
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-fg">
-                  {d.city}, {d.country}
-                </span>
-                <span className="block truncate text-xs text-muted">
-                  {d.count} {d.count === 1 ? "home" : "homes"} to swap
-                </span>
-              </span>
-            </button>
-          </li>
+      {geoError && (
+        <p className="mt-2 text-xs text-danger" role="alert">
+          {geoError}
+        </p>
+      )}
+
+      <ul id={listId} role="listbox" aria-label="Destinations" ref={listRef}>
+        {groups.map((g) => (
+          <Fragment key={g.key}>
+            {g.title && (
+              <li
+                role="presentation"
+                className="px-1 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted"
+              >
+                {g.title}
+              </li>
+            )}
+            {g.options.map((o) => {
+              index += 1;
+              const i = index;
+              return (
+                <li
+                  key={o.id}
+                  id={`${listId}-${i}`}
+                  data-index={i}
+                  role="option"
+                  aria-selected={i === activeIndex}
+                  // pointerdown, not click: the input keeps focus, and a blur
+                  // must never close the list out from under the tap.
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    choose(o);
+                  }}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 text-left transition ${
+                    i === activeIndex ? "bg-bg" : ""
+                  }`}
+                >
+                  {o.leading}
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-fg">{o.label}</span>
+                    {o.hint && (
+                      <span className="block truncate text-xs text-muted">{o.hint}</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </Fragment>
         ))}
       </ul>
 
-      {/* Second section, and second on purpose: a city where somebody is
-          already offering a home is a better answer than one where nobody is,
-          so the inventory leads and the gazetteer follows (Lecture 5 —
-          contrast: the more useful group gets the stronger position). */}
-      {elsewhere.rows.length > 0 && (
-        <>
-          <p className="px-1 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
-            Anywhere else
-          </p>
-          <ul>
-            {elsewhere.rows.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => onPick(c.name)}
-                  className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-bg"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-base">
-                    {c.emoji}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-fg">
-                      {c.name}, {c.countryName}
-                    </span>
-                    <span className="block truncate text-xs text-muted">
-                      {c.admin1 ?? "Search homes here"}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <p
+        role="status"
+        className={`px-1 pt-3 text-xs text-muted ${flat.length > 0 ? "sr-only" : ""}`}
+      >
+        {status}
+      </p>
 
-      {list.length === 0 && elsewhere.rows.length === 0 && (
-        <p className="px-1 py-3 text-sm text-muted">
-          {elsewhere.loading ? "Searching…" : "No place by that name — try another spelling."}
-        </p>
+      {recent.length > 0 && !typing && (
+        <div className="mt-2 border-t border-border pt-2 text-right">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              clearRecentPlaces();
+            }}
+            className="rounded-lg px-2 py-1 text-xs font-medium text-accent transition hover:text-brand"
+          >
+            Clear recent
+          </button>
+        </div>
       )}
     </div>
   );
@@ -549,7 +925,6 @@ function useGlobalCities(value: string, alreadyShown: Destination[]) {
     rows: query && result.key === query ? result.rows.filter((c) => !shown.has(c.name.toLowerCase())) : [],
   };
 }
-
 // ── When ────────────────────────────────────────────────────────────────────
 // An Airbnb-style range picker: a real month calendar (check-in → check-out)
 // on top, with a few quick "flexible" lengths below (Hick's law). Picking dates

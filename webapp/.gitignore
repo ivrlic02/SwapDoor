@@ -42,3 +42,5 @@ supabase/seed-places.sql
 
 # Lokalna pomocna skripta za slanje na GitHub (ne ide u repo)
 sync-to-github.ps1
+
+.vercel

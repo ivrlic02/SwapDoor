@@ -147,6 +147,16 @@ The final web application must:
 - [x] Ensure responsive design across breakpoints — QA'd at mobile/tablet/desktop, then **redesigned for touch on 2026-08-23**: a device-measured heuristic evaluation (320–820px) and a rebuild of everything below `lg` — drawer, search sheets, Explore filter sheet, swipe galleries, 44px targets, mobile spacing — with the desktop rendering left byte-identical. See the last dated section in [Handoff.md](./Handoff.md)
 - [x] **Light and dark themes** — added 2026-08-24. The dark theme stays the default and is provably unchanged; the light one is the same design re-lit, holding the same contrast floor (fg 14.65:1, muted 5.23:1, accent 4.71:1, all measured on the painted page). Switched by one control in the footer, the account menu and the mobile drawer. See the last dated section in [Handoff.md](./Handoff.md)
 - [ ] Run usability evaluation with target personas (or representative users)
-- [ ] Run PageSpeed Insights performance audit
+- [x] **Image + page-load performance pass** — added 2026-08-24. The photos were not
+  slow, they were *cold*: a warm optimizer request answers in 170 ms and a cold one
+  took 1.4–2.3 s, and almost every request was cold. Fixed by a 31-day image cache,
+  a trimmed width ladder (226 optimizer URLs on a listing page → 94), galleries that
+  fetch the next photo before it is asked for, and
+  [scripts/warm-images.mjs](../../scripts/warm-images.mjs) so nobody is the first
+  visitor. `/explore` also stopped querying Supabase on every request. See the last
+  dated section in [Handoff.md](./Handoff.md)
+- [ ] Run PageSpeed Insights performance audit *(worth running only after the next
+  deploy **and** `node scripts/warm-images.mjs` — the optimizer cache is keyed to the
+  build, so a fresh deployment starts cold and would be measured cold)*
 - [ ] Finalize production deployment *(build is green; needs Vercel env vars + Supabase redirect URLs, and email auto-confirm turned off)*
 - [ ] Compile final report (project phases + usability evaluation + performance results)

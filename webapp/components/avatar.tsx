@@ -36,12 +36,20 @@ export function Avatar({
     >
       {initials(name)}
       {src && (
+        // `width`/`height` rather than `fill` + `sizes`. A sized image asks
+        // next/image for the whole responsive ladder — ten candidate widths of
+        // srcset, ~2 KB of markup, for a circle that is never larger than 52
+        // CSS pixels. Given fixed dimensions it emits 1x and 2x only, which is
+        // all an avatar can ever use: the page carries a dozen of these (every
+        // card has a host, every review has an author), so this is a couple of
+        // hundred URLs and a few kilobytes of HTML per page that were only ever
+        // going to be discarded by the browser.
         <Image
           src={src}
           alt=""
-          fill
-          sizes={`${size}px`}
-          className="object-cover"
+          width={size}
+          height={size}
+          className="absolute inset-0 h-full w-full object-cover"
         />
       )}
     </span>

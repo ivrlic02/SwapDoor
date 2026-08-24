@@ -145,7 +145,8 @@ export default async function BlogPage({
                       src={featured.cover}
                       alt=""
                       fill
-                      priority
+                      preload
+                      fetchPriority="high"
                       placeholder="blur"
                       blurDataURL={BLUR_DATA_URL}
                       sizes="(max-width: 768px) 100vw, 55vw"
@@ -190,7 +191,8 @@ export default async function BlogPage({
                         src={post.cover}
                         alt=""
                         fill
-                        priority={!featured && i === 0}
+                        loading={!featured && i === 0 ? "eager" : "lazy"}
+                        fetchPriority={!featured && i === 0 ? "high" : "auto"}
                         placeholder="blur"
                         blurDataURL={BLUR_DATA_URL}
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { isSupabaseConfigured } from "./supabase/config";
 import { createClient, createPublicClient } from "./supabase/server";
 import { coordsFor } from "./coordinates";
@@ -320,20 +321,59 @@ export const getFeaturedReviews = cache(async (limit = 16): Promise<FeaturedRevi
     .map((row) => ({ ...mapReview(row), house: row.house! }));
 });
 
+// How long a cached listing read may be stale, in seconds. Matches the
+// `revalidate` on /explore/[id], so the grid and the page it links to can never
+// disagree about a home by more than one window.
+const HOUSES_TTL = 60;
+
+// The `houses` table, cached ACROSS requests (not just within one render).
+//
+// /explore reads `searchParams`, which makes it a dynamic route: every single
+// visit was re-running this query against Supabase before a byte of HTML could
+// be sent — a round trip to another provider's region, on the critical path,
+// for fourteen rows that change a few times a week. React's `cache()` below
+// dedupes within one render but is thrown away at the end of it, so it never
+// helped the *next* visitor.
+//
+// The trade is one minute of staleness on the grid: a member who publishes a
+// home may not see it on /explore for up to `HOUSES_TTL`. Their own
+// /my-listings is unaffected (it reads their session, uncached), and the
+// listing's own page is generated on demand for an id nobody has cached yet, so
+// the redirect straight after publishing still lands on real content.
+//
+// `unstable_cache` rather than the `use cache` directive that replaces it in
+// Next 16: `use cache` requires `cacheComponents: true`, which changes the
+// default rendering mode of every route in the app and wants a Suspense
+// boundary around every dynamic read. That is a migration, not a performance
+// fix, and it is not what this pass is.
+const fetchHousesFromDb = unstable_cache(
+  async (): Promise<House[]> => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("houses")
+      .select(HOUSE_SELECT)
+      .order("id", { ascending: true });
+
+    // Thrown, not returned: a failed query must not be written into the cache
+    // and served for the next minute. The caller catches it and falls back.
+    if (error || !data) throw new Error(error?.message ?? "houses query failed");
+    return (data as unknown as HouseRow[]).map(mapRow);
+  },
+  ["houses:all"],
+  { revalidate: HOUSES_TTL, tags: ["houses"] }
+);
+
 // Wrapped in React `cache()` so multiple callers in one render (e.g. the home
 // page needs the list for the hero/map *and* topDestinations *and* Trending)
 // share a single fetch instead of hitting the source repeatedly.
 export const getHouses = cache(async (): Promise<House[]> => {
   if (!isSupabaseConfigured) return fetchHousesFromGist();
 
-  const supabase = createPublicClient();
-  const { data, error } = await supabase
-    .from("houses")
-    .select(HOUSE_SELECT)
-    .order("id", { ascending: true });
-
-  if (error || !data) return fetchHousesFromGist();
-  return (data as unknown as HouseRow[]).map(mapRow);
+  try {
+    return await fetchHousesFromDb();
+  } catch {
+    return fetchHousesFromGist();
+  }
 });
 
 export type Destination = {
@@ -534,6 +574,25 @@ export async function getMyListings(): Promise<House[]> {
   return (data as unknown as HouseRow[]).map(mapRow);
 }
 
+// One house, cached across requests on the same terms as the list above. An id
+// that does not exist caches as `null` too, which is the point: a crawler
+// hammering a dead /explore/999 should cost one query a minute, not one each.
+const fetchHouseFromDb = unstable_cache(
+  async (id: number): Promise<House | null> => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("houses")
+      .select(HOUSE_SELECT)
+      .eq("id", id)
+      .single();
+
+    if (error || !data) return null;
+    return mapRow(data as unknown as HouseRow);
+  },
+  ["houses:by-id"],
+  { revalidate: HOUSES_TTL, tags: ["houses"] }
+);
+
 // Cached like getHouses(): the detail route asks for the same house twice in one
 // render (generateMetadata + the page itself), and that should be one query.
 export const getHouseById = cache(async (id: number): Promise<House | null> => {
@@ -544,13 +603,5 @@ export const getHouseById = cache(async (id: number): Promise<House | null> => {
     return houses.find((h) => h.id === id) ?? null;
   }
 
-  const supabase = createPublicClient();
-  const { data, error } = await supabase
-    .from("houses")
-    .select(HOUSE_SELECT)
-    .eq("id", id)
-    .single();
-
-  if (error || !data) return null;
-  return mapRow(data as unknown as HouseRow);
+  return fetchHouseFromDb(id);
 });

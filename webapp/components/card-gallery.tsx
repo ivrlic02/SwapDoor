@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type MouseEvent, type ReactNode, type TouchEvent } from "react";
+import { useCallback, useRef, useState, type MouseEvent, type ReactNode, type TouchEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BLUR_DATA_URL } from "@/lib/images";
@@ -41,6 +41,59 @@ export function CardGallery({
   const [index, setIndex] = useState(0);
   const many = images.length > 1;
 
+  // WHICH PHOTOS ARE IN THE DOM — the fix for "every photo takes a while".
+  //
+  // This used to render `images[index]` and nothing else, so turning the page
+  // unmounted one <Image> and mounted another: the browser only started
+  // fetching the next photo at the moment it was asked to show it, and the
+  // reader watched a blur placeholder for as long as the optimizer needed
+  // (measured cold: 0.9–1.4s). Going *back* re-fetched a photo already seen.
+  //
+  // Now every photo the reader has looked at stays mounted (stacked, faded
+  // between), and the neighbours of the current one are mounted alongside it —
+  // so the photo after this one is already downloaded and decoded before the
+  // arrow is clicked. Mounting is still demand-driven rather than eager: the
+  // Explore grid is a dozen cards of four photos each, and mounting all of them
+  // would be ~50 image requests for photos nobody has asked to see, competing
+  // with the ones on screen. The card starts with its hero and pulls the second
+  // photo in on the first sign of intent — a hover, a focus, or a finger
+  // landing on it.
+  const [live, setLive] = useState<ReadonlySet<number>>(() => new Set([0]));
+
+  const reveal = useCallback(
+    (...want: number[]) => {
+      setLive((prev) => {
+        let next: Set<number> | null = null;
+        for (const raw of want) {
+          const i = ((raw % images.length) + images.length) % images.length;
+          if (prev.has(i)) continue;
+          next ??= new Set(prev);
+          next.add(i);
+        }
+        // Same set → same reference → no re-render. Worth the care: this runs
+        // on pointer-enter, which fires on every card the mouse crosses.
+        return next ?? prev;
+      });
+    },
+    [images.length]
+  );
+
+  // Called on hover/focus/touch: fetch the photo the arrows would land on.
+  const prime = useCallback(() => {
+    if (many) reveal(1, -1);
+  }, [many, reveal]);
+
+  // Turn the page AND pull in that photo's own neighbours, so a reader holding
+  // the arrow down stays ahead of the network instead of behind it.
+  const show = useCallback(
+    (next: number) => {
+      const i = ((next % images.length) + images.length) % images.length;
+      setIndex(i);
+      reveal(i, i + 1, i - 1);
+    },
+    [images.length, reveal]
+  );
+
   // Swipe. Touch start/end only — nothing is preventDefault-ed, so vertical
   // page scrolling stays entirely the browser's job and only a clearly
   // horizontal gesture is claimed as a swipe.
@@ -54,6 +107,7 @@ export function CardGallery({
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
     swiped.current = false;
+    prime();
   };
 
   const onTouchEnd = (e: TouchEvent) => {
@@ -67,18 +121,18 @@ export function CardGallery({
     // drifts a little is never mistaken for a page turn.
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     swiped.current = true;
-    setIndex((i) => (i + (dx < 0 ? 1 : -1) + images.length) % images.length);
+    show(index + (dx < 0 ? 1 : -1));
   };
 
   const step = (delta: number) => (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIndex((i) => (i + delta + images.length) % images.length);
+    show(index + delta);
   };
   const jump = (i: number) => (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIndex(i);
+    show(i);
   };
 
   return (
@@ -86,6 +140,12 @@ export function CardGallery({
       className="relative aspect-[4/3] touch-pan-y overflow-hidden"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      // Hover/focus is the earliest honest signal that this card is the one
+      // being considered. `onPointerEnter` and not `onMouseEnter` so a pen or a
+      // trackpad tap counts too; `onFocusCapture` so arriving by keyboard warms
+      // the same photos a mouse would.
+      onPointerEnter={prime}
+      onFocusCapture={prime}
       onClickCapture={(e) => {
         if (!swiped.current) return;
         swiped.current = false;
@@ -94,16 +154,35 @@ export function CardGallery({
       }}
     >
       <Link href={href} className="relative block h-full w-full focus:outline-none" aria-label={alt}>
-        <Image
-          src={images[index]}
-          alt={alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          priority={priority && index === 0}
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
-          className="object-cover transition duration-300 group-hover:scale-105"
-        />
+        {images.map((src, i) =>
+          live.has(i) ? (
+            <Image
+              key={`${src}-${i}`}
+              src={src}
+              // Only the visible photo describes the card; the ones stacked
+              // behind it are the same home and would repeat the label to a
+              // screen reader for no gain.
+              alt={i === index ? alt : ""}
+              aria-hidden={i !== index}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              // `priority` was deprecated in Next 16 in favour of `preload`,
+              // and preload is the wrong tool here anyway: the grid marks its
+              // first three or four cards, and four <link rel=preload> in the
+              // <head> is four images racing each other and the JS for the same
+              // bandwidth. Eager + high priority tells the browser to start
+              // these immediately and rank them above the rest, without
+              // hoisting them out of document order.
+              loading={priority && i === 0 ? "eager" : "lazy"}
+              fetchPriority={priority && i === 0 ? "high" : "auto"}
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
+              className={`object-cover transition duration-300 group-hover:scale-105 ${
+                i === index ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ) : null
+        )}
       </Link>
 
       {overlay}

@@ -11,6 +11,14 @@ import {
 import Image from "next/image";
 import { BLUR_DATA_URL } from "@/lib/images";
 
+// The lightbox photo sits in a `max-w-6xl` box (1152px) with 16px of padding
+// either side, so below 1184px of viewport it is the viewport width and above
+// it is a constant 1152. Declared once because the hidden pre-warm copy has to
+// resolve to the SAME srcset candidate as the real one, or the warm-up fetches
+// a file the lightbox will not use.
+const LIGHTBOX_SIZES = "(max-width: 1184px) 100vw, 1152px";
+const LIGHTBOX_WIDTH = 1152;
+
 // Detail-page photo gallery.
 //
 // Layout is the mosaic every travel site uses — one large photo plus a column of
@@ -28,9 +36,61 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
   // The tile that opened the lightbox, so focus can go back where it started.
   const openerRef = useRef<HTMLElement | null>(null);
 
-  const go = useCallback(
-    (delta: number) => setIndex((i) => (i + delta + images.length) % images.length),
+  // WHICH PHOTOS THE LIGHTBOX HAS IN THE DOM.
+  //
+  // It used to render `images[index]` alone, so every press of → threw away one
+  // <Image> and mounted another: the request for the next photo started at the
+  // instant the reader asked to see it, and they watched a black rectangle for
+  // as long as the optimizer took (measured cold against production: 1.0–1.8s
+  // at these sizes). Pressing ← then paid the same price for a photo already
+  // downloaded once.
+  //
+  // Now the current photo, its two neighbours, and everything already looked at
+  // are all mounted and faded between. The next photo is fetched while the
+  // reader is still looking at this one, so the arrow answers immediately, and
+  // going back is free. Unlike the card galleries this is not gated on hover:
+  // opening a full-screen gallery IS the statement of intent.
+  const [live, setLive] = useState<ReadonlySet<number>>(() => new Set());
+
+  const reveal = useCallback(
+    (...want: number[]) => {
+      setLive((prev) => {
+        let next: Set<number> | null = null;
+        for (const raw of want) {
+          const i = ((raw % images.length) + images.length) % images.length;
+          if (prev.has(i)) continue;
+          next ??= new Set(prev);
+          next.add(i);
+        }
+        return next ?? prev;
+      });
+    },
     [images.length]
+  );
+
+  // Clicking "Show all photos" used to be a cold start: the lightbox asks for a
+  // much larger rendition than the mosaic tile does (a different width, so a
+  // different cache entry), and that request only began once the overlay was
+  // already on screen and black. Hovering the mosaic — or tabbing onto it — is
+  // the reader deciding, so the first full-size photo is fetched then, into a
+  // 1px box nobody sees. `sizes` is evaluated against the viewport rather than
+  // against the element, so the hidden copy resolves to exactly the URL the
+  // lightbox will ask for and the overlay opens on a browser cache hit.
+  const [warm, setWarm] = useState(false);
+  const warmUp = useCallback(() => setWarm(true), []);
+
+  // Turn the page AND pull in that photo's own neighbours, so a reader holding
+  // → down stays ahead of the network instead of behind it. Written against
+  // `index` rather than as a `setIndex` updater because it has a second effect
+  // besides moving the cursor, and an updater is supposed to be pure — the cost
+  // is that the key handler below re-binds on each photo, which is nothing.
+  const go = useCallback(
+    (delta: number) => {
+      const next = (index + delta + images.length) % images.length;
+      setIndex(next);
+      reveal(next, next + 1, next - 1);
+    },
+    [index, images.length, reveal]
   );
 
   // Swipe inside the lightbox. The arrows are a pointer control (see the note
@@ -55,6 +115,7 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
   const openAt = (i: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
     openerRef.current = e.currentTarget;
     setIndex(i);
+    reveal(i, i + 1, i - 1);
     setOpen(true);
   };
 
@@ -90,14 +151,19 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
 
   return (
     <div>
-      <div className="relative">
+      <div className="relative" onPointerEnter={warmUp} onFocusCapture={warmUp}>
         {/* The side column is a flex stack rather than fixed grid rows: a
             member-created listing may carry only one or two photos, and with
             hard-coded rows those left an empty cell beside the hero. Now the
             tiles split the column height between them however many there are,
             and a lone photo takes the full width. */}
         <div className="grid gap-2 overflow-hidden rounded-2xl md:h-[420px] md:grid-cols-3 lg:h-[480px]">
-          {/* Hero photo — the LCP image on this page, so it loads eagerly. */}
+          {/* Hero photo — the LCP image on this page, so it loads eagerly.
+              `preload` and not the `priority` prop: Next 16 deprecated the
+              latter in favour of the former, and this is the one image on the
+              site preload is genuinely for — a single, unambiguous LCP element
+              that should start downloading from the <head> rather than waiting
+              to be discovered in the body. */}
           <button
             type="button"
             onClick={openAt(0)}
@@ -110,7 +176,8 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
               src={images[0]}
               alt={alt}
               fill
-              priority
+              preload
+              fetchPriority="high"
               quality={90}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
@@ -163,6 +230,27 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
             Show all {images.length} photos
           </button>
         )}
+
+        {/* The pre-warmed full-size photo 1. One pixel, invisible, no pointer
+            events — it exists only so the browser has the file by the time the
+            overlay opens. It is dropped the moment the lightbox mounts, which
+            renders the same URL for real. */}
+        {warm && !open && (
+          <span aria-hidden className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0">
+            <Image
+              src={images[0]}
+              alt=""
+              width={LIGHTBOX_WIDTH}
+              height={LIGHTBOX_WIDTH}
+              quality={90}
+              sizes={LIGHTBOX_SIZES}
+              // Explicitly eager: a 1px element is a poor lazy-loading target,
+              // and starting this fetch immediately is the entire point.
+              loading="eager"
+              className="h-px w-px"
+            />
+          </span>
+        )}
       </div>
 
       {open && (
@@ -191,14 +279,29 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
             className="relative h-[78vh] w-full max-w-6xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={images[index]}
-              alt={alt}
-              fill
-              quality={90}
-              sizes="100vw"
-              className="object-contain"
-            />
+            {images.map((src, i) =>
+              live.has(i) ? (
+                <Image
+                  key={`${src}-${i}`}
+                  src={src}
+                  alt={i === index ? alt : ""}
+                  aria-hidden={i !== index}
+                  fill
+                  quality={90}
+                  // Was `100vw`, which is a claim this element does not make:
+                  // the box is `max-w-6xl`, so above 1152px of viewport the
+                  // photo never gets wider than 1152 CSS pixels. Telling the
+                  // browser otherwise had it picking the 1920 and 3840
+                  // renditions on ordinary laptops — the two slowest and
+                  // heaviest entries in the whole pipeline (3840 measured at
+                  // 2.3s cold) — to paint an image half that size.
+                  sizes={LIGHTBOX_SIZES}
+                  className={`object-contain transition-opacity duration-200 ${
+                    i === index ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              ) : null
+            )}
           </div>
 
           {many && (
@@ -227,14 +330,29 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
                   <button
                     key={src + i}
                     type="button"
-                    onClick={() => setIndex(i)}
+                    onClick={() => {
+                      setIndex(i);
+                      reveal(i, i + 1, i - 1);
+                    }}
+                    // Hovering a thumbnail is a reader deciding; start the
+                    // full-size fetch there rather than on the click.
+                    onPointerEnter={() => reveal(i)}
                     aria-label={`Show photo ${i + 1}`}
                     aria-current={i === index}
                     className={`relative size-14 shrink-0 overflow-hidden rounded-lg transition ${
                       i === index ? "ring-2 ring-white" : "opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <Image src={src} alt="" fill sizes="56px" className="object-cover" />
+                    {/* Fixed dimensions rather than `fill` + `sizes`: a 56px
+                        thumbnail has no use for the ten-width responsive
+                        ladder, and there is one of these per photo. */}
+                    <Image
+                      src={src}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                   </button>
                 ))}
                 <span className="px-2 text-sm tabular-nums text-white/80">

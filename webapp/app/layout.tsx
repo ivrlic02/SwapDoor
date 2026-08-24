@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { RouteProgress } from "@/components/route-progress";
+import { WelcomeBanner } from "@/components/welcome-banner";
 import { SavedProvider } from "@/components/saved-context";
 import { ProfileProvider } from "@/components/profile-context";
 import { SwapsProvider } from "@/components/swaps-context";
@@ -99,6 +101,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <RouteProgress />
+        {/* "Your account is ready" after signing up. It lives here, not on a
+            page, because sign-up honours ?next= and so has no fixed
+            destination — see components/welcome-banner.tsx. <Suspense> is not
+            optional: the banner reads the query string, and without the
+            boundary that would opt every statically prerendered route in the
+            site out of prerendering to greet one new member. */}
+        <Suspense fallback={null}>
+          <WelcomeBanner />
+        </Suspense>
         <ProfileProvider>
           <SavedProvider>
             <SwapsProvider>{children}</SwapsProvider>

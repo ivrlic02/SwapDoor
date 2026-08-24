@@ -20,6 +20,16 @@ function safeNext(next: string | null): string {
   return next;
 }
 
+// Flags the destination so <WelcomeBanner> greets a brand-new member there.
+// Built through URL rather than by appending "?welcome=1", because `next` is
+// whatever page gated the action the guest was trying to take — it can already
+// carry a query string or a hash (`/profile#account`), and both have to survive.
+function withWelcome(path: string): string {
+  const url = new URL(path, window.location.origin);
+  url.searchParams.set("welcome", "1");
+  return url.pathname + url.search + url.hash;
+}
+
 export function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -36,13 +46,11 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setMessage(null);
 
     if (!isSupabaseConfigured) {
       setError(
@@ -71,7 +79,27 @@ export function AuthForm() {
         },
       });
       if (error) setError(error.message);
-      else setMessage("Check your email to confirm your account, then sign in.");
+      else {
+        // Email auto-confirm is ON for this project, so a successful signUp has
+        // already returned a session: the new member is signed in right now.
+        // This used to print "Check your email to confirm your account, then
+        // sign in." — a state the system was never in — and then leave them
+        // parked on the form. Sign-up now ends exactly where sign-in ends: the
+        // session is pushed to the server components with refresh(), and they
+        // land on whatever they were trying to reach, told it worked by
+        // <WelcomeBanner> when they get there.
+        //
+        // Note this ties the code to the dashboard setting. If email
+        // confirmation is ever switched back on, signUp returns no session and
+        // this redirect walks into a gated route the proxy will bounce back to
+        // /sign-in; that branch has to come back with it.
+        router.refresh();
+        router.push(withWelcome(next));
+        // Deliberately no setLoading(false): the button stays disabled and
+        // reading "Please wait…" until the new page takes over, so the account
+        // cannot be submitted twice while the navigation is in flight.
+        return;
+      }
     }
 
     setLoading(false);
@@ -150,7 +178,6 @@ export function AuthForm() {
         </div>
 
         {error && <p className="text-danger text-sm">{error}</p>}
-        {message && <p className="text-success text-sm">{message}</p>}
 
         <button
           type="submit"

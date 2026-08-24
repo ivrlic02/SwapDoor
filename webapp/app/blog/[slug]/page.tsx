@@ -104,7 +104,8 @@ export default async function BlogPostPage({
               src={post.cover}
               alt=""
               fill
-              priority
+              preload
+              fetchPriority="high"
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
               sizes="(max-width: 768px) 100vw, 768px"

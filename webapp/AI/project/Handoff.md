@@ -2,7 +2,7 @@
 
 > Originally written after a full pass over the codebase, with the goal of finishing the app to course-requirement quality in ~2–3 focused days, redoing the color system, and connecting **Supabase** for auth + data (headless CMS role). All three are done.
 >
-> **Last updated: 2026-08-23.** Read **§1** for what exists now, **"What's left to do"** for what doesn't, and the dated sections at the bottom for the reasoning behind each change (they are the raw material for the final report).
+> **Last updated: 2026-08-24.** The app is **live** at **https://swap-door.vercel.app**. Read **§1** for what exists now, **"What's left to do"** for what doesn't, and the dated sections at the bottom for the reasoning behind each change (they are the raw material for the final report).
 
 ---
 
@@ -14,9 +14,17 @@
 
 **Stack:** Next.js 16 (App Router), React 19, Tailwind CSS v4, TypeScript, **Supabase** (auth + Postgres + Storage), Leaflet for maps.
 
+**Live since 2026-08-24** at **https://swap-door.vercel.app** — Vercel project `ivrlic02s-projects/swap-door`, root directory `webapp/`, rebuilt on every push to `main`. It had in fact been deployed since January and *serving a 214-day-old build*, because the four pushes since then had all failed; see the last dated section for what was wrong and what is still open (Preview env vars, and Supabase Auth still pointing at localhost).
+
 `tsc`, `eslint` (over `app/`, `components/`, `lib/` and `scripts/`) and `next build` are all clean; the project still has **zero lint errors**.
 
 > A note that briefly stood here recorded two faults caught mid-flight during the light-mode pass — a bare `accent` left behind in `globe.tsx` while its colours were being moved onto tokens (`TS2304`), and a `set-state-in-effect` violation in the first draft of `theme-toggle.tsx`. **Both are fixed** as of 2026-08-24 and the tree is green; the second one is written up properly in that pass's dated section, since the lint rule was pointing at a real bug rather than a style preference.
+
+**Photos and page loads were reworked on 2026-08-24** — a 31-day image cache, a
+trimmed width ladder, galleries that fetch the next photo before it is clicked, cached
+listing reads, and [scripts/warm-images.mjs](../../scripts/warm-images.mjs), which must
+be run **after each deploy** or the optimizer cache starts empty. See the last dated
+section in this file.
 
 **Two themes since 2026-08-24** — dark (the default, and unchanged) and light — switched by `<ThemeToggle>` in the footer, the account menu and the mobile drawer, and applied before first paint by an inline script in [app/layout.tsx](../../app/layout.tsx). See the last dated section in this file.
 
@@ -29,7 +37,7 @@
 | ● `/explore/[id]` | [app/explore/[id]/page.tsx](../../app/explore/[id]/page.tsx) | Photo mosaic + lightbox, amenities, reviews, "Where you'll be" map, swap panel, similar homes |
 | ○ `/how-it-works` | [app/how-it-works/page.tsx](../../app/how-it-works/page.tsx) | Sticky step rail (scroll-spy) beside a **live product panel per step**, trust cards, FAQ grouped into Money / Safety / Dates / Your home. Every word comes from the CMS `site_content` table (2026-08-22) |
 | ƒ `/blog`, ● `/blog/[slug]` | [app/blog](../../app/blog) | Editorial list with a URL-synced category filter; posts render **ten block types** — text, list, image, gallery, quote, callout, YouTube (click-to-load), code, and a **live listing card** read from `houses`. 5 posts from Supabase `blog_posts` (2026-08-22) |
-| ○ `/sign-in` | [app/sign-in/page.tsx](../../app/sign-in/page.tsx) | Real Supabase email/password sign-in + sign-up; honours `?next=` |
+| ○ `/sign-in` | [app/sign-in/page.tsx](../../app/sign-in/page.tsx) | Real Supabase email/password sign-in + sign-up; honours `?next=`. Since 2026-08-24 **sign-up ends inside the app**, not on the form: auto-confirm means the new member already has a session, so they are redirected to `?next=` (or `/`) and greeted there by `<WelcomeBanner>` |
 | ƒ `/dashboard` 🔒 | [app/dashboard/page.tsx](../../app/dashboard/page.tsx) | Saved homes (wishlist) |
 | ƒ `/profile` 🔒 | [app/profile/page.tsx](../../app/profile/page.tsx) | Photo upload, name/location/bio, a **Travel & swap** block (who you travel with, what for, trip length, pets/smoking), a **Profile strength** meter, the live "how hosts see you" preview, **Your reviews**, and `#account` (change email, password, sessions, delete account) |
 | ƒ `/my-listings` 🔒 | [app/my-listings/page.tsx](../../app/my-listings/page.tsx) | Homes you host, with Edit + inline-confirming Unlist |
@@ -53,7 +61,7 @@
 - **Search + map:** [home-search-context](../../components/home-search-context.tsx) (the destination is structured — label + city + country + ISO code — since 2026-08-23), [search-fields](../../components/search-fields.tsx) (the "Where" panel is a real combobox with Near me / Anywhere / Recent / Whole country), [lib/place-filter](../../lib/place-filter.ts) (the one place that decides what a destination matches, shared by Explore and both maps), [lib/recent-places](../../lib/recent-places.ts), [home-hero-map](../../components/home-hero-map.tsx), [map-section](../../components/map-section.tsx) → [home-map](../../components/home-map.tsx), [explore-map](../../components/explore-map.tsx), [house-map](../../components/house-map.tsx).
 - **Listings:** [house-card](../../components/house-card.tsx) (shared by Explore/Trending/My listings), [card-gallery](../../components/card-gallery.tsx), [gallery](../../components/gallery.tsx), [swap-panel](../../components/swap-panel.tsx), [reviews-section](../../components/reviews-section.tsx), [amenity-list](../../components/amenity-list.tsx), [save-button](../../components/save-button.tsx).
 - **Swaps:** [swap-dock-context](../../components/swap-dock-context.tsx) (docks the panel into the nav), [swap-actions](../../components/swap-actions.tsx) (accept / decline / withdraw), [swap-thread](../../components/swap-thread.tsx) (the conversation), data layer [lib/swaps.ts](../../lib/swaps.ts) + client-safe [lib/swap-types.ts](../../lib/swap-types.ts).
-- **Account:** [auth-form](../../components/auth-form.tsx), [profile-form](../../components/profile-form.tsx), [profile-strength](../../components/profile-strength.tsx), [my-reviews](../../components/my-reviews.tsx), [account-settings](../../components/account-settings.tsx), [listing-form](../../components/listing-form.tsx), [unlist-button](../../components/unlist-button.tsx), [trust-checklist](../../components/trust-checklist.tsx), [review-form](../../components/review-form.tsx) (+ [swap-review](../../components/swap-review.tsx), the accepted-swap entry point); client-safe field constants + the strength calculation in [lib/profile-types.ts](../../lib/profile-types.ts), and the Verified thresholds in [lib/trust.ts](../../lib/trust.ts).
+- **Account:** [auth-form](../../components/auth-form.tsx) (+ [welcome-banner](../../components/welcome-banner.tsx), the "your account is ready" strip it redirects into — mounted in [app/layout.tsx](../../app/layout.tsx) inside `<Suspense>`, because sign-up honours `?next=` and so has no fixed destination), [profile-form](../../components/profile-form.tsx), [profile-strength](../../components/profile-strength.tsx), [my-reviews](../../components/my-reviews.tsx), [account-settings](../../components/account-settings.tsx), [listing-form](../../components/listing-form.tsx), [unlist-button](../../components/unlist-button.tsx), [trust-checklist](../../components/trust-checklist.tsx), [review-form](../../components/review-form.tsx) (+ [swap-review](../../components/swap-review.tsx), the accepted-swap entry point); client-safe field constants + the strength calculation in [lib/profile-types.ts](../../lib/profile-types.ts), and the Verified thresholds in [lib/trust.ts](../../lib/trust.ts).
 - **Helpers:** [lib/house-types.ts](../../lib/house-types.ts) (client-safe types/constants), [lib/storage.ts](../../lib/storage.ts), [lib/geocode.ts](../../lib/geocode.ts), [lib/coordinates.ts](../../lib/coordinates.ts), [lib/explore-query.ts](../../lib/explore-query.ts), [lib/seo.ts](../../lib/seo.ts) (`pageMetadata()` — the one place a page's share tags are built; Next replaces the `openGraph`/`twitter` blocks wholesale, so they must always travel together).
 
 ---
@@ -174,12 +182,12 @@ Supabase satisfies "remote headless CMS" for the blog and listings. If the rubri
 |-------------|--------|--------|
 | Responsive across devices | ✅ Done | Was "it fits"; since **2026-08-23** it is designed for touch. Full heuristic evaluation measured on emulated devices (320–820px) and rebuilt below `lg`: drawer, search sheets, Explore filter sheet, swipe galleries, touch targets ≥ 44px, mobile rhythm — desktop provably unchanged. See the last dated section |
 | Search / filter of listings | ✅ Done | Interactive home map **+** structured filters on `/explore` (destination search, guests, max-price slider, available-from date, sort) with live count, empty state, and shareable URL params. Hero search now feeds straight into these filters |
-| User login for private content | ✅ Live | Supabase Auth connected + verified. The private area is six real gated routes, not an empty gate: `/dashboard` (wishlist), `/profile` (+ account settings), `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home` — which **writes** to the CMS as the signed-in host — and `/swaps` (+ `/swaps/[id]`), the request inbox and its conversation |
+| User login for private content | ✅ Live | Supabase Auth connected + verified, and since **2026-08-24** signing up lands you *inside* the gate rather than on a form telling you to go and read an email that is never sent. The private area is six real gated routes, not an empty gate: `/dashboard` (wishlist), `/profile` (+ account settings), `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home` — which **writes** to the CMS as the signed-in host — and `/swaps` (+ `/swaps/[id]`), the request inbox and its conversation |
 | Public blog (images + video + code) | ✅ Done | `/blog` + `/blog/[slug]`, **5 posts across 4 categories**, served from Supabase. The narrowed "images only" scope was reopened on 2026-08-22: the block model made video and code snippets nearly free, so the brief is now met literally |
 | Content in a remote headless CMS | ✅ Live | Listings (`houses`), **blog posts (`blog_posts`) and the whole How-it-Works page (`site_content`)**, all in Supabase behind RLS. The admin surface is no longer the Supabase Table Editor but a real editor at `/admin` — see the dated section at the end (2026-08-22) |
-| Deploy to cloud (Vercel/Netlify) | ❓ Unknown | Confirm Vercel project + env vars |
+| Deploy to cloud (Vercel/Netlify) | ✅ Live | **https://swap-door.vercel.app** since **2026-08-24**. Vercel project `ivrlic02s-projects/swap-door`, root directory `webapp/`, auto-deploys from `main`. The two `NEXT_PUBLIC_SUPABASE_*` vars are set for **Production + Development**; **Preview is still empty**, so a branch deploy would still fail. See the last dated section |
 | Usability evaluation | ❌ Missing | Short test with 2–3 users against the personas; write up |
-| PageSpeed Insights audit | ⚠️ Ready to run | `next/image` + polish done; run on the deployed URL and screenshot results |
+| PageSpeed Insights audit | ⚠️ Ready to run | `next/image` + polish done. **Nothing blocks it any more** — run it against `https://swap-door.vercel.app` and screenshot the results |
 | Final report | ❌ Missing | Compile phases + usability + performance |
 
 ---
@@ -235,6 +243,7 @@ Supabase satisfies "remote headless CMS" for the blog and listings. If the rubri
 - ✅ **The ✓ Verified badge became true, and reviews became writable** (2026-08-22) — the badge was a hash of a listing's id; it is now a host's record (90 days + bio + location + 3 reviews averaging 4.5), computed in the database and inherited by every home they host. Members can write, edit and delete reviews, behind an RLS policy that stops self-reviews and duplicates, with a trigger keeping `houses.rating` honest. Dated section at the end.
 - ✅ **The profile grew up** (2026-08-22) — a **Travel & swap** block (who you travel with, what for, trip length, pets/smoking, all three-state and all optional), a **Profile strength** meter reading the live draft, a **Your reviews** section, and account settings that can finally change an email, end every session, and delete the account. New: [supabase/profile.sql](../../supabase/profile.sql), [lib/profile-types.ts](../../lib/profile-types.ts). Dated section at the end.
 - ✅ **Share metadata** (2026-08-22) — every public route emits its own `og:*`, `twitter:*` and canonical via `lib/seo.ts`; before this a shared listing showed the generic logo card on X, and every blog post previewed as the homepage. Verified 22/22 routes.
+- ✅ **Sign-up stopped lying to new members** (2026-08-24) — it printed "Check your email to confirm your account, then sign in" on a project where auto-confirm is ON, then left them on the form; they were signed in already and nothing said so. It now redirects to `?next=` (or `/`) and says *"Your account is ready — you're signed in"* there. New: [welcome-banner](../../components/welcome-banner.tsx). Proved by driving the real form in headless Chrome, which is also what caught the mount-time bug in the first attempt. Dated section at the end.
 
 ### UX notes (grounded in the course's Nielsen heuristics — see `AI/hci-knowledge-base`)
 - **Visibility of system status (#3):** map shows "Showing N of M homes", a loading skeleton, and a "Locating…" state.
@@ -351,6 +360,10 @@ A second, deeper pass over `/explore` run as a formal **heuristic evaluation** (
 
 **Remaining before deploy:** turn email auto-confirm **OFF**, add the Vercel URL to Supabase `site_url` + redirects, and set the two `NEXT_PUBLIC_SUPABASE_*` env vars in Vercel.
 
+> **Update 2026-08-24.** The third of those is done — and it turned out to be the
+> thing that had been failing every Vercel build since January. The first two are
+> **still open**; see the last dated section in this file.
+
 ### Explore round 2 — wishlist, reviews, photo galleries, split map (2026-08-17)
 
 A second product pass over `/explore` and the listing card, framed by a "what would the big home-swap players do" review (Airbnb / Booking / **HomeExchange**) and chosen by the user from clickable option menus. Built in **verified increments** — each one `next build` + `eslint` green (only the **pre-existing** `usePresence` set-state-in-effect warning in [navigation.tsx](../../components/navigation.tsx) remains), then a dev-server smoke test. DB changes were applied to the **live** Supabase project via MCP and mirrored into [supabase/schema.sql](../../supabase/schema.sql) + per-feature seed files.
@@ -459,8 +472,8 @@ The navbar's signed-in state was `Saved · vujmatej@gmail.com · [Sign Out]`, an
 Ranked by what actually blocks the course deliverable, not by size.
 
 ### Blocking the final submission
-1. **Deploy to Vercel.** Nothing is live yet. Set `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel env vars, then in Supabase add the Vercel URL to **Site URL** + the redirect allow-list. Everything else is ready; the build is green.
-2. **Turn email auto-confirm OFF** before that deploy (it's ON for demo convenience — right now anyone can sign up with a fake address).
+1. ⚠️ **HALF-DONE (2026-08-24) — the site is deployed, the auth URLs are not.** Live at **https://swap-door.vercel.app**; the two `NEXT_PUBLIC_SUPABASE_*` vars are set on Vercel and the production build is green. Missing them was what had been failing every deploy since January — see the last dated section. **Still open:** Supabase Auth keeps `site_url=http://localhost:3000` and a localhost-only redirect allow-list, so any mailed auth link (password reset, the email-change confirmation in [account-settings.tsx](../../components/account-settings.tsx)) sends the member to a dead URL. Sign-in and sign-up work today only because auto-confirm is ON and neither mails a link. Add `https://swap-door.vercel.app` to **Site URL** + the allow-list.
+2. **Turn email auto-confirm OFF** before that deploy (it's ON for demo convenience — right now anyone can sign up with a fake address). **No longer a dashboard-only change:** since 2026-08-24 sign-up redirects straight into the app on the assumption that a session comes back, so flipping this also needs the `else if (data.session)` branch putting back in [auth-form.tsx](../../components/auth-form.tsx) — see the last dated section.
 3. **Usability evaluation.** Still not done, and it's an explicit requirement. Cheapest credible version: 2-3 people, 3 tasks ("find a home in Greece for two weeks in September", "check whether it has a workspace", "start a swap request"), note where they hesitate, then rank the findings by severity as in Lecture 4. The listing page was rebuilt against the heuristics but never tested on a real person.
 4. **PageSpeed Insights run** on the deployed URL + screenshot. Worth doing *after* deploy since the image work (AVIF + right-sized masters) should show up in LCP.
 5. **Final report** — phases + usability findings + performance. The dated sections in this file are the raw material.
@@ -477,7 +490,7 @@ Ranked by what actually blocks the course deliverable, not by size.
 12. **Favicon is still stock Next.js** ([app/favicon.ico](../../app/favicon.ico), untouched since `create-next-app`) and the **nav still draws its own placeholder `DoorMark` SVG** instead of the real mascot that now lives in [public/mascot.png](../../public/mascot.png).
 13. ✅ **FIXED (2026-08-18) — the `usePresence` lint error.** `mounted` is now derived during render instead of being set synchronously in an effect. **The project has zero lint errors**, so the report can claim a clean codebase.
 14. **Stats are invented numbers** ("50K+ Members") — carry a disclaimer today, but they're still fiction on the home page.
-15. **SEO basics: `sitemap.ts` and `robots.ts`** are still the open half. **Share metadata is done (2026-08-22)** — every public route now emits its own `og:*` + `twitter:*` + canonical through [lib/seo.ts](../../lib/seo.ts), verified 22/22; the site-root OG *image* landed 2026-08-21. Per-route card **images** (`opengraph-image.tsx` + `next/og`) were offered and deliberately not taken — see the last dated section for the font constraint if that changes.
+15. **SEO basics: `sitemap.ts` and `robots.ts`** are still the open half. **Share metadata is done (2026-08-22)** — every public route now emits its own `og:*` + `twitter:*` + canonical through [lib/seo.ts](../../lib/seo.ts), verified 22/22; the site-root OG *image* landed 2026-08-21. Per-route card **images** (`opengraph-image.tsx` + `next/og`) were offered and deliberately not taken — see the dated section of that day for the font constraint if that changes. **The one caveat on all of it closed on 2026-08-24:** `metadataBase` no longer resolves to `localhost:3000`. Verified on the live site — `og:url` reads `https://swap-door.vercel.app` and `/explore/5` canonicalises to `https://swap-door.vercel.app/explore/5`.
 16. ✅ **FIXED (2026-08-24) — light/dark toggle.** A second token block in [globals.css](../../app/globals.css) selected by `data-theme` on `<html>`, set before first paint by an inline script and flipped by one `<ThemeToggle>` in three places (footer, account menu, mobile drawer). The dark theme is provably unchanged. It does demo the design system — and it also found the four places the system was not as tokenised as this line assumed: 21 hard-coded shadows, 4 hover tints, the map tiles and the globe's greys. Dated section at the end of this file.
 
 ### Housekeeping
@@ -1889,6 +1902,12 @@ whoever picks that up: `next/og` ships with Next, but satori reads only
 this project — so it needs a committed font file or a build-time fetch. And
 `metadataBase` still resolves to `localhost:3000` until the Vercel env var is
 set, so every card URL above is absolute-but-local until deploy.
+
+> **Closed 2026-08-24.** The site is deployed and every card URL is now absolute
+> against `https://swap-door.vercel.app`. No env var was needed in the end:
+> Vercel injects `VERCEL_PROJECT_PRODUCTION_URL` and
+> [app/layout.tsx](../../app/layout.tsx) already reads it, with
+> `NEXT_PUBLIC_SITE_URL` left for a custom domain.
 
 ---
 
@@ -3339,3 +3358,453 @@ the account menu, the sort dropdown and the Where popover.
 - **Leaflet's popups** are its own white bubbles in both themes. They were
   already light on the dark site, so this pass did not make them worse — but
   they are the last surface that does not follow the tokens.
+
+---
+
+### The deploy had been failing since January, and nobody had read the log (2026-08-24)
+
+`swap-door.vercel.app` was serving a **214-day-old build** — commit `634d386`, from 22
+January. Every push since the full application replaced the old `webapp/` folder had
+produced a deployment and every one of them had failed: four in a row (`c35e498`,
+`b8ec479`, `26239a9`, `969db16`), each dying in under 40 seconds. From outside, the
+symptom read as *"Vercel won't take my commit"*, which points the search at git — the
+wrong place entirely.
+
+**Git was never involved.** The GitHub integration had picked up every commit correctly,
+and the deployment for the newest one was sitting right there in the dashboard with a red
+dot on it. Proof, in the order it was gathered:
+
+- `git rev-parse origin/main:webapp` and `git write-tree` over the local index give the
+  **same tree hash** (`7c20010a686eb2f93d30e45478699130a2b2d37c`), so GitHub has
+  byte-for-byte what is on disk — the [sync-to-github.ps1](../../sync-to-github.ps1) tree
+  surgery had dropped nothing.
+- `npm run build` locally: green.
+- Every relative and `@/` import resolves to a **tracked file with matching case** —
+  the Windows-passes / Linux-fails trap, checked with a script over `git ls-files`
+  rather than by eye.
+
+That left the environment, and the environment reproduced it on the first try:
+
+```
+NEXT_PUBLIC_SUPABASE_URL="" NEXT_PUBLIC_SUPABASE_ANON_KEY="" npx next build
+
+Error occurred prerendering page "/explore/5"
+Error: @supabase/ssr: Your project's URL and API key are required to create a Supabase client!
+    at components\review-form.tsx:43
+⨯ Next.js build worker exited with code: 1
+```
+
+**The two `NEXT_PUBLIC_SUPABASE_*` variables had never been set on Vercel.** They were
+written down as a to-do on 2026-08-17 ("Remaining before deploy"), again as blocking item
+1, and simply never done.
+
+#### Why it only started failing now
+
+Missing keys are supposed to be survivable. [lib/supabase/config.ts](../../lib/supabase/config.ts)
+exports `isSupabaseConfigured`, and the whole data layer falls back to the gist when it is
+false — that guard is why the January build was green *without* keys. What broke it is
+[review-form.tsx](../../components/review-form.tsx), added on 2026-08-22 with the reviews
+feature:
+
+```tsx
+const [supabase] = useState(() => createClient());
+```
+
+A **client** component — but `/explore/[id]` is SSG, so React runs that initialiser at
+build time inside the prerender, and `createClient()` is one of the few paths that never
+consults `isSupabaseConfigured`; `@supabase/ssr` throws on an empty URL. So the feature
+that made "Verified" mean something also quietly made the *build* depend on env vars that
+were not there, and every deploy since has failed. Worth keeping as a lesson: the
+fallback was real, it just had a hole in it that only a build-time render could find.
+
+#### The fix
+
+```powershell
+npx vercel login
+npx vercel link                        # ivrlic02's projects -> swap-door
+$u = ((Get-Content .env.local | ? { $_ -match '^NEXT_PUBLIC_SUPABASE_URL=' }) -split '=',2)[1]
+$k = ((Get-Content .env.local | ? { $_ -match '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' }) -split '=',2)[1]
+foreach ($t in 'production','preview','development') {
+  $u | npx vercel env add NEXT_PUBLIC_SUPABASE_URL $t
+  $k | npx vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY $t
+}
+npx vercel redeploy https://swap-door-cczx2uuep-ivrlic02s-projects.vercel.app --scope ivrlic02s-projects
+```
+
+Two CLI details worth recording, because each cost a round trip:
+
+- Piping the value into `vercel env add` works for `production` and `development` but
+  **silently skips `preview`** — preview asks a *second* question ("which Git branch?"),
+  stdin is already consumed, and the variable is never added. `vercel env ls` showed four
+  rows instead of six.
+- `vercel redeploy` resolves the deployment against the CLI's **current scope**, not the
+  linked project's, so it answers `Deployment belongs to a different team` until you pass
+  `--scope ivrlic02s-projects` (or run `vercel switch` first). `vercel ls` does *not* have
+  this problem, which makes it confusing: listing works, acting fails.
+
+Result: **Ready in 46s**, aliased to `swap-door.vercel.app`.
+
+#### Verified against the live site, not the dashboard
+
+- `/`, `/explore`, `/explore/5`, `/blog` — all **HTTP 200**. `/explore/5` is the exact page
+  that was killing the build.
+- The listing HTML carries `jkxtknkrmctgecpeozvb.supabase.co`, so production is reading the
+  **database**, not the gist fallback: the keys reached the runtime, not just the build.
+- `<title>` on `/explore/5` is `Malibu Oceanfront Modern — California, USA · SwapDoor`.
+- `og:url` is `https://swap-door.vercel.app` and `/explore/5` canonicalises to
+  `https://swap-door.vercel.app/explore/5`. **`metadataBase` is no longer localhost**, and
+  no env var was needed for it — Vercel injects `VERCEL_PROJECT_PRODUCTION_URL` and
+  [app/layout.tsx](../../app/layout.tsx) already reads it.
+
+#### Left open
+
+- **Preview env vars are still empty** (the stdin problem above). Production and Development
+  hold both keys; a branch or PR deploy would fail exactly the way the last four did.
+  Dashboard → Settings → Environment Variables → each var → Edit → tick **Preview**.
+- **Supabase Auth still points at localhost** — `site_url=http://localhost:3000` and a
+  localhost-only redirect allow-list, unchanged since 2026-08-17. Password sign-in and
+  sign-up work on production regardless, because auto-confirm is ON and neither mails a
+  link; but a password reset, or the email-change confirmation in
+  [account-settings.tsx](../../components/account-settings.tsx), would send a member to a
+  dead URL. This is now the only thing standing between the live site and working auth
+  email, and it is a dashboard change, not a code one.
+- **Email auto-confirm is still ON** (blocking item 2) — and it is now on a public URL
+  rather than on localhost, which is a different risk than it was yesterday.
+- **[review-form.tsx](../../components/review-form.tsx) still builds its client during
+  render.** Harmless with the keys set, but it means the build fails hard the next time an
+  environment is short a variable — which is precisely how this happened. Creating the
+  client lazily inside the effect that already runs there would make the prerender
+  independent of the environment again. Not done today: it is a real change to a working
+  feature, and it was not what the deploy needed.
+- **The four junk rows** (housekeeping item 20) are now live on a public URL and still
+  first on the Explore grid.
+
+---
+
+### Sign-up told every new member to go and read an email that never arrives (2026-08-24)
+
+Creating an account ended with a green line under the password field:
+
+> Check your email to confirm your account, then sign in.
+
+None of that is true on this project. Supabase has had **email auto-confirm ON**
+since 2026-08-17 (the "Supabase go-live" section, and blocking item 2), so
+`signUp()` returns a **live session** — the member is signed in the instant the
+account exists. What they were handed instead was an instruction to wait for
+mail that is never sent, a Sign In tab they had no reason to press again, and
+the same form they had just filled in, unchanged. Nothing said the account had
+been created at all.
+
+**The premise was measured, not assumed.** A throwaway signup against the live
+project over the REST API came back with `access_token` present and
+`confirmed_at` already stamped (`2026-08-24T11:48:26Z`) — no mail step exists to
+wait for. The test user was then removed through the app's own
+`delete_own_account()` RPC (HTTP 204), and signing in as it afterwards returns
+`invalid_credentials`, so the cleanup is confirmed rather than assumed.
+
+This is the Gulf of Evaluation (Lecture 3) on the **first** thing anybody does
+here: the member acted, the world changed, and the interface reported a
+different world. Nielsen #1 puts the same fault more bluntly — a system's report
+of its own state has to be the state it is in.
+
+**What it does now.** [auth-form.tsx](../../components/auth-form.tsx) ends sign-up
+exactly where sign-in already ended: `router.refresh()` to push the new session
+into the server components, then `router.push()` to the destination — `?next=` if
+a gated action sent them here (the wishlist heart, the swap panel, *List your
+home*), `/` otherwise — with `?welcome=1` appended. The destination is flagged
+through `URL` rather than by string-appending `?welcome=1`, because `next` can
+already carry a query string or a hash (`/profile#account`) and both have to
+survive. `setLoading(false)` is deliberately skipped on that path, so the button
+stays disabled and reading *"Please wait…"* until the new page takes over and the
+account cannot be created twice while the navigation is in flight.
+
+**[welcome-banner.tsx](../../components/welcome-banner.tsx)** is what greets them
+there — the same pattern as
+[published-banner.tsx](../../components/published-banner.tsx) one level up the
+site, for the same reasons: `role="status"` so a screen reader announces it, ✓
+**and** words so the meaning never rides on the green alone (Lecture 6), the flag
+stripped from the URL after the first paint so a refresh or a pasted link does
+not congratulate the next reader, and two ways onward instead of a dead end
+(Nielsen #3) — *Complete profile*, which is what actually decides whether a host
+says yes, and *Browse homes*.
+
+**It is mounted in [app/layout.tsx](../../app/layout.tsx), not on a page.** Sign-up
+honours `?next=`, so there is no single destination to hang it off; the banner
+renders `null` on every route that has no flag, which is all of them but one. The
+`<Suspense fallback={null}>` around it is not decoration — it reads the query
+string, and without the boundary that would opt **every statically prerendered
+route in the site** out of prerendering in order to greet one new member.
+
+#### The bug the screenshots hid
+
+The first version read the flag with `useState(() => params.get("welcome") === "1")`,
+copied straight from `<PublishedBanner>`. Loading `/?welcome=1` directly showed the
+banner perfectly, at every width, in both themes — four screenshots, all green, all
+misleading. **A lazy state initialiser runs once, at mount**, and this component is
+mounted in the *root layout*: by the time sign-up pushes the new route it has been alive
+since `/sign-in`, so it read the query string of the page the member was *leaving*, found
+no flag, and never looked again. `<PublishedBanner>` gets away with the identical line
+only because it lives inside a page and remounts on arrival.
+
+Nothing caught this but driving the real form: headless Chrome filled Sign Up, submitted,
+and landed on `/list-your-home?welcome=1` with **no banner on it** — the flag in the URL,
+untouched, because the effect that strips it had never run either.
+
+The fix reads `params` on every render and latches the result into state, adjusted during
+render rather than from an effect. A `useRef` latch was tried first and rejected by the
+project's own lint (`react-hooks/refs`, *Cannot access refs during render*) — correctly:
+a ref would not have re-rendered anything.
+
+#### Verified
+
+- `tsc`, `eslint` over `app/`, `components/`, `lib/` and `scripts/`, and `next build`: all
+  green, zero warnings. The route table is unchanged — `/`, `/sign-in`, `/how-it-works`,
+  `/privacy`, `/terms` still `○ (Static)`, the 14 `/explore/[id]` + 5 `/blog/[slug]`
+  pages still `● (SSG)`. The layout-level client component dragged nothing into dynamic
+  rendering, which is what the `<Suspense>` is there to guarantee.
+- **The premise, over REST:** a throwaway signup came back with `access_token` present and
+  `confirmed_at` already stamped. There is no mail step to wait for.
+- **The whole flow, in headless Chrome** against the production build, cookies cleared,
+  from `/sign-in?mode=sign-up&next=/list-your-home`: the form filled and submitted → the
+  button reads *"Please wait…" [disabled]* while the navigation is in flight → lands on
+  **`/list-your-home`**, the page the guest was gated out of → the banner is there, with
+  *Complete profile* and *Browse homes* → the navbar shows the account menu, not *Sign In*
+  → `?welcome=1` is gone from the URL a moment later.
+- **At 390 px** the two actions first wrapped onto separate lines and the banner ate two
+  thirds of the screen before the page below said anything; the label is *Complete
+  profile*, not *Complete your profile*, for exactly that reason. Re-measured after the
+  change: one row, ~210 px tall, hero still visible.
+- **Light theme** re-checked at 1280 px: dark green ✓ on a pale green field, body copy on
+  `text-muted`, contrast holding.
+- **Nothing left behind.** Every throwaway account created for this — the REST one and the
+  two from the browser runs — was deleted through the app's own `delete_own_account()`
+  RPC (HTTP 204 each), and signing in as one afterwards returns `invalid_credentials`.
+
+**One thread left deliberately loose.** The "check your email" branch is *gone*,
+not kept as a fallback — a decision taken with its consequence known. Sign-up now
+assumes auto-confirm stays on. Blocking item 2 still says to turn it **off**
+before production, and the day that happens `signUp()` will return no session and
+this redirect will walk into a gated route that `proxy.ts` bounces straight back
+to `/sign-in`. Turning auto-confirm off is therefore no longer a dashboard-only
+change: it needs the `else if (data.session)` branch putting back, and the
+comment at the redirect in `auth-form.tsx` says so at the point where it matters.
+
+### The photos were not slow, they were cold (2026-08-24)
+
+Three complaints, all about waiting: flicking through a home's photos made you
+wait for each one, `/explore` took a while to appear, and so did a listing page.
+They turned out to be one problem with two halves — a caching layer that was
+never allowed to work, and two galleries that asked for a photo only at the
+moment the reader wanted to look at it.
+
+#### What was measured first
+
+Nothing here was guessed. Against the live deployment, the same photo through
+the image optimizer:
+
+| request | cold (`X-Vercel-Cache: MISS`) | warm (`HIT`) | bytes |
+|---|---|---|---|
+| `w=1080 q=75` AVIF | **1.39 s** | 0.17 s | 79 KB |
+| `w=1920 q=90` AVIF | **1.78 s** | 0.17 s | 267 KB |
+| `w=3840 q=75` AVIF | **2.28 s** | 0.17 s | 264 KB |
+| `w=1080 q=75` WebP | 0.89 s | 0.17 s | 134 KB |
+
+So the pipeline is not slow — a warm request answers in 170 ms and always did.
+Practically every request was **cold**, and the reasons were all in
+`next.config.ts`:
+
+- **The cache expired every four hours.** `minimumCacheTTL` was unset, so
+  optimized images were served `max-age=14400, must-revalidate`. A site that is
+  opened a few times a day — by a grader, a usability tester, PageSpeed Insights
+  — landed on an expired entry nearly every time and paid the full re-encode.
+- **There were far too many entries to warm.** The default ladder is eight
+  device widths plus seven image widths — **15 candidate renditions per photo**,
+  at two qualities, in two formats. Sixty variants of one photograph, so the one
+  a given visitor's browser picked had usually never been generated. Those 15
+  URLs are also ~3 KB of `srcset` text in the HTML *per image*: `/explore/1` was
+  shipping **226 optimizer URLs** in 272 KB of markup.
+- **`w=3840` was pure waste.** The stored masters are 2400px wide and next/image
+  never upscales, so the most expensive request on the site (2.3 s) returned the
+  same pixels as `w=2048`.
+- **The lightbox asked for a size it does not use.** `sizes="100vw"` on a photo
+  living inside a `max-w-6xl` (1152px) box, so an ordinary laptop was fetching
+  the 1920 and 3840 renditions to paint an image half that wide.
+
+**AVIF was kept.** It is the slower encode — that is the whole of its
+disadvantage — but it is 79 KB against WebP's 134 KB at the same width and
+quality, and *both* answer a warm request in 170 ms. Serving everyone 70% more
+bytes for the rest of a deployment to save a one-off encode is the wrong trade
+once the encode is actually cached, which is what the rest of this section is
+about.
+
+#### What changed in `next.config.ts`
+
+```
+minimumCacheTTL: 2678400            // 31 days, was an implicit 4 hours
+deviceSizes: [640, 828, 1080, 1440, 1920, 2048]   // was 8 widths incl. 3840
+imageSizes: [64, 128, 256, 384]                    // was 7
+```
+
+Ten candidates instead of fifteen. The dropped widths sit within ~15% of a
+neighbour that survives — under a JPEG's worth of visible detail — so no device
+gets a worse picture, while every remaining width is now warmed by more visitors
+and the markup shrinks. `/explore/1` went from **226 optimizer URLs to 94**.
+
+Content-addressing is what makes a 31-day TTL safe: uploads get random names
+([lib/storage.ts](../../lib/storage.ts)) and the re-seed overwrites a fixed path
+([seed-storage-media.mjs](../../scripts/seed-storage-media.mjs)), so a changed
+photo is a changed URL, which is a different cache key. There is nothing to
+invalidate.
+
+#### [scripts/warm-images.mjs](../../scripts/warm-images.mjs) — nobody should be the first visitor
+
+A cache that survives is still empty until someone fills it, and the person who
+fills it is the one who waits. So the filling is now a command, in the same
+spirit as [build-places-seed.mjs](../../scripts/build-places-seed.mjs) and
+[seed-storage-media.mjs](../../scripts/seed-storage-media.mjs):
+
+```
+node scripts/warm-images.mjs                          # after every deploy
+node scripts/warm-images.mjs --site http://localhost:3000
+node scripts/warm-images.mjs --dry-run
+```
+
+It reads the live photo list out of Supabase (`houses.image`, `houses.images`,
+`profiles.avatar_url` — so member-created listings are covered, not just the
+seeded ten), builds every rendition the app can ask for, and GETs them through
+the optimizer with a real browser's `Accept` header. **798 URLs** as of today: 55
+listing photos × 14 renditions plus 7 avatars × 4. It reports how many were
+already warm against how many it had to encode, so a run after a deploy is also
+the measurement that the deploy is warm. Safe to re-run — it only issues GETs.
+
+Reading the list from the database is the right call here, unlike in
+`seed-storage-media.mjs` where a fixed manifest was needed: that script *writes*
+the rows it would be reading, and this one only wants to know what the site is
+serving today.
+
+**Run it after each deploy.** The optimizer cache is keyed to the build, so a new
+deployment starts cold no matter how long the TTL is.
+
+#### The galleries were fetching photos one at a time, on demand
+
+Both galleries rendered `images[index]` and nothing else. Turning the page
+unmounted one `<Image>` and mounted another, which means the request for the next
+photo *started at the moment the reader asked to see it* — and then they watched
+a blur placeholder for as long as the optimizer took. Going back re-fetched a
+photo already downloaded once. This is the "every photo takes a while" complaint
+exactly, and it would have persisted at 170 ms per photo even with a perfectly
+warm cache, because 170 ms of latency still lands entirely after the click.
+
+Both now keep a set of *live* indices — the current photo, its two neighbours,
+and everything already looked at — mounted together and cross-faded. The photo
+after this one is fetched while the reader is still looking at this one.
+
+- **[card-gallery.tsx](../../components/card-gallery.tsx)** (the Explore grid and
+  Trending) mounts only the hero on load and pulls the neighbours in on the first
+  sign of intent — `onPointerEnter`, `onFocusCapture`, or a finger landing on the
+  card. Mounting all four photos of a dozen cards up front would have been ~50
+  image requests for photos nobody had asked to see, competing with the ones
+  actually on screen. Verified in the served HTML: 14 cards, 14 photos, **zero**
+  `opacity-0` images in the initial render. The revealed neighbours also carry
+  `loading="lazy"`, so a card scrolled past below the fold reveals without
+  fetching.
+- **[gallery.tsx](../../components/gallery.tsx)** (the listing page) does not gate
+  on hover: opening a full-screen gallery *is* the statement of intent. Its
+  `sizes` was corrected to the box it actually occupies
+  (`(max-width: 1184px) 100vw, 1152px`), which alone drops it off the two
+  slowest renditions in the pipeline.
+- **The first lightbox photo used to be a cold start of its own**, because the
+  lightbox asks for a larger rendition than the mosaic tile does — a different
+  width, so a different cache entry, requested only once the overlay was already
+  on screen and black. Hovering or tabbing onto the mosaic now fetches it into a
+  1px invisible box. `sizes` is evaluated against the viewport rather than
+  against the element, so the hidden copy resolves to precisely the URL the
+  lightbox will ask for and the overlay opens on a browser cache hit — which is
+  why `LIGHTBOX_SIZES` and `LIGHTBOX_WIDTH` are constants shared by both and not
+  two strings that could drift.
+
+#### `/explore` was querying Supabase on every single request
+
+`/explore` reads `searchParams`, which makes it a dynamic route: every visit
+re-ran the `houses` query — a round trip to another provider's region, on the
+critical path, before a byte of HTML could be sent — for fourteen rows that
+change a few times a week. React's `cache()` already wrapped `getHouses()`, but
+that dedupes within one render and is thrown away at the end of it, so it never
+helped the *next* visitor.
+
+[lib/houses.ts](../../lib/houses.ts) now caches the listing reads **across**
+requests (`unstable_cache`, 60 s, tagged `houses`), for both the list and the
+single-house lookup. Locally the difference is 0.22 s → 0.04 s of TTFB; on Vercel
+the saved round trip is longer. A failed query is **thrown rather than returned**
+so a failure is never written into the cache and served for the next minute — the
+caller catches it and falls back to the gist exactly as before.
+
+The trade is stated plainly: a member who publishes a home may not see it on
+`/explore` for up to 60 seconds. That is the same window `/explore/[id]` has had
+since it gained `revalidate = 60`, their own `/my-listings` is unaffected (it
+reads their session, uncached), and the redirect straight after publishing goes
+to an id nothing has cached yet, so it renders live.
+
+`unstable_cache` and not the `use cache` directive that replaces it in Next 16:
+`use cache` requires `cacheComponents: true`, which changes the default rendering
+mode of every route in the app and wants a Suspense boundary around every dynamic
+read. That is a migration, not a performance fix.
+
+#### Three deprecations cleared on the way past
+
+Next 16 deprecated the `priority` prop in favour of `preload`, and the two are
+not interchangeable — which is the reason the deprecation exists.
+
+- The **listing page hero** and the **blog covers** are single, unambiguous LCP
+  elements, so they take `preload` + `fetchPriority="high"` and start downloading
+  from the `<head>`. Confirmed in the served HTML: `<link rel="preload"
+  as="image" imageSrcSet=… fetchPriority="high">`.
+- The **card grids** do not. They mark their first three or four cards, and four
+  `<link rel=preload>` is four images racing each other *and* the JavaScript for
+  the same bandwidth — the case the Next docs explicitly say not to use preload
+  for. Those became `loading="eager"` + `fetchPriority="high"`, which starts them
+  immediately without hoisting them out of document order.
+- **[avatar.tsx](../../components/avatar.tsx)** and the lightbox thumbnail strip
+  were asking for the full ten-width responsive ladder to draw a 26–56px circle.
+  Given fixed `width`/`height` instead of `fill` + `sizes`, next/image emits 1x
+  and 2x only — which is all an avatar can ever use, and there is one per card,
+  per review and per host block on the page.
+
+#### Verified
+
+- `tsc`, `eslint` over `app/ components/ lib/ scripts/`, and `next build` are all
+  clean. 34 static pages generated, all 14 listing pages still prerendered.
+- Against a local production build: `/explore` TTFB 0.22 s cold → **0.04 s** on
+  the next request (the new data cache); `/explore/1` **0.017 s**. Optimizer URLs
+  in the markup of `/explore/1`: **226 → 94**.
+- The served HTML was checked for what the new code claims: one photo per card
+  and no hidden ones, `loading="eager"` + `fetchPriority="high"` on exactly the
+  first three cards, and the preload link on the listing hero.
+- `warm-images.mjs --dry-run` against the live project resolves 798 URLs from 55
+  photos and 7 avatars.
+
+#### Left open, deliberately
+
+- **The warming script has not been run against production yet**, because the
+  live deployment is still the *old* build: it requests the old width ladder, so
+  warming it now would fill entries (`w=1440`) nothing asks for and miss ones
+  (`w=750`, `w=1200`, `w=3840`) the current build still uses. Deploy first, then
+  run it.
+- **The Supabase browser client is the largest script on every page.** 256 KB
+  uncompressed, the biggest chunk on `/explore`, loaded on every route including
+  for signed-out visitors, because the three providers in
+  [app/layout.tsx](../../app/layout.tsx) plus the nav's account menu all import
+  `lib/supabase/client` at module scope. Moving those five to a dynamic
+  `import()` inside their effects would take it off the critical path. Not done
+  here: it rewires auth state on every page to save parse time, which is a
+  different risk profile from everything above, and the measured problem was the
+  1.4–2.3 s images rather than the JavaScript.
+- **`/explore` is still a dynamic route.** Reading its filters on the client
+  instead of from `searchParams` would make it fully static and CDN-served, but
+  the first paint would then show unfiltered results before hydration corrected
+  them — a shared filtered link would briefly lie about what it found, which is
+  the Nielsen #1 problem this file has fixed twice already. The data cache takes
+  the database off that path; the remaining cost is Vercel's own invocation.
+- **The blog's images are still hotlinked to Unsplash** (unchanged from
+  2026-08-23), so they are outside both the warming script's list and the
+  content-addressing argument for a 31-day TTL.

@@ -72,20 +72,32 @@ export function Footer() {
               carries no information, is aria-hidden inside <MascotGlyph>, and
               is dropped below lg, where it would sit under the copy instead of
               beside it.
-              Anchored to the bottom-right corner and allowed to run off it,
-              rather than floated in the middle of the column: at 7% in the
-              open it read as a second, accidental copy of the logo two inches
-              below the real one. Bled off an edge at 5% it reads as what it is
-              — a texture in the corner, not an element. */}
-          {/* The clip lives on a wrapper rather than on the column itself: the
-              column's first child is a focusable link, and `overflow-hidden`
-              there would cut the top of its focus ring off. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 hidden overflow-hidden lg:block"
-          >
-            <MascotGlyph className="absolute bottom-0 right-2 h-36 w-auto opacity-[0.06]" />
-          </span>
+
+              It sits in the middle of the empty channel between the two blocks
+              of text — the brand paragraph and the link columns — rather than
+              tucked against the edge of its own column, where it read as
+              belonging to the paragraph rather than as the texture between the
+              two. Being equidistant from both is what stops it attaching
+              itself to either (proximity, Lecture 5).
+
+              The offset is that midpoint solved for this column's own width, so
+              it holds at every width from lg up and not only at the container's
+              maximum. With W the grid's content width and C this column's
+              width: the paragraph stops at a fixed `max-w-xs` (320px) and the
+              links start at column 7, i.e. (W-352)/2 + 192, so the midpoint is
+              168 + W/4. A 5-of-12 column means W = 2.4C + 44.8, which turns
+              that into 0.6C + 179.2 — `calc(60% + 179px)`, a percentage here
+              resolving against C. Hence a centring translate, not an edge
+              anchor.
+
+              Nothing clips it any more: reaching that midpoint means
+              overflowing the column by ~60px into the gutter. The air either
+              side is equal by construction — 36px at lg, 68px once the
+              container stops growing. The wrapper that used to carry
+              the clip went with it — it only existed because `overflow-hidden`
+              on the column itself would have cut the top off the focus ring of
+              the link above. */}
+          <MascotGlyph className="pointer-events-none absolute bottom-0 left-[calc(60%_+_179px)] hidden h-36 w-auto -translate-x-1/2 opacity-[0.06] lg:block" />
         </div>
 
         <nav aria-labelledby="footer-explore" className="lg:col-span-3 lg:col-start-7">

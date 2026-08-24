@@ -260,8 +260,20 @@ body {
 }
 
 /* Leaflet map: dark container that matches the dark CARTO ("Dark Matter")
-   tiles, so there's no bright flash beyond/while the tiles load. */
-.leaflet-container {
+   tiles, so there's no bright flash beyond/while the tiles load.
+
+   The class is doubled because Leaflet ships its own `.leaflet-container {
+   background: #ddd }` in a stylesheet injected AFTER this file — at equal
+   specificity the later rule wins, so the single-class version of this never
+   applied anywhere. It used to be corrected only inside the mobile block near
+   the bottom of this file, on the reasoning that "on a wide screen it never
+   shows: the fitted world is taller than the box". That held for the home map
+   (520px tall, full width) and stopped holding when Explore's map became a
+   sticky half-width column ~790px tall: at zoom 2 the world is wider than tall
+   there, so the leftover was two light-grey bands across the darkest page on
+   the site — the highest-contrast thing in view, marking nothing (Lecture 5).
+   Fixed here for every width rather than duplicated at a second breakpoint. */
+.leaflet-container.leaflet-container {
   background: var(--color-surface-2);
 }
 
@@ -295,6 +307,121 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .swapdoor-pin--selected svg {
     animation: none;
+  }
+}
+
+/* Map clusters — several homes standing on one spot, drawn as ONE mark that
+   says how many (components/map-clusters.ts).
+
+   Written here rather than taken from the plugin's MarkerCluster.Default.css,
+   whose whole content is hardcoded green / yellow / orange fills. That file is
+   never imported; this is what draws a cluster instead, and it is on the same
+   tokens as everything else, so it follows the theme with no listener.
+
+   The shape is deliberately NOT the pin. A pin is a teardrop anchored at its
+   tip and marks a point; a cluster is a circle centred on its coordinate and
+   marks an area — different things look different (Nielsen #2, and Lecture 5's
+   contrast). What ties them together is the brand fill and the same pale ring
+   the pin is stroked with (CRAP repetition).
+
+   Meaning is never carried by colour: the count is a numeral, and the disc
+   steps up in size with it, so both survive a grayscale check (Lecture 6).
+
+   Everything visible is drawn on the INNER `__disc`, never on the marker
+   element, for the same two reasons the pin draws itself on an inner <svg>:
+   Leaflet's own `.leaflet-marker-icon { display: block }` is injected after
+   this file and wins the tie, and Leaflet writes the marker's position as an
+   inline `transform`, which no stylesheet can beat. Both were caught on screen
+   — the count sitting outside the disc, and a hover scale that did nothing. */
+.swapdoor-cluster {
+  /* Ink for the numeral, per theme, because the brand moves between them and
+     the two ends want opposite answers. Dark theme: #0b0f1a on #3b82f6 is
+     5.2:1 — and #0b0f1a is already the pin's inner dot, so it is a value the
+     maps use, not a new one. White there would be 3.7:1 and fail. */
+  --cluster-ink: #0b0f1a;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  line-height: 1;
+}
+.swapdoor-cluster--md {
+  font-size: 0.875rem;
+}
+.swapdoor-cluster--lg {
+  font-size: 0.9375rem;
+}
+
+.swapdoor-cluster__disc {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  /* The same pale stroke the pin is outlined with, so the two marks read as
+     one family across both themes (CRAP repetition). */
+  border: 2px solid #f8fafc;
+  color: var(--cluster-ink);
+  /* The halo is what reads as "there is more than one of these under here" —
+     a second edge standing off the disc. Brand at low alpha, so it never
+     competes with the 10% accent budget (60-30-10). */
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-brand) 30%, transparent);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* On a finger, the smallest cluster is a 36px target — under the 44px floor the
+   2026-08-23 touch pass set for the rest of the site. This grows the target to
+   44 without growing the mark: an invisible ring that overhangs the disc by 4px
+   on every side. Clicks on it bubble to the marker element, which is where
+   Leaflet's own handler sits, so the plugin needs to know nothing about it — and
+   because the size lives in CSS rather than in `iconSize`, the map does not need
+   a runtime branch on what kind of pointer is in use. */
+@media (pointer: coarse) {
+  .swapdoor-cluster__disc::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 9999px;
+  }
+}
+
+/* Hovered from the results list, or holding the current selection / search
+   matches. Same amber as a selected pin, and for the same reason: blue↔orange
+   is the colour-blind-safe pair, and it arrives with a size change so the
+   state is never colour alone. */
+.swapdoor-cluster--active .swapdoor-cluster__disc {
+  background: var(--color-selected);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-selected) 35%, transparent);
+  transform: scale(1.1);
+}
+
+/* The light theme's brand is a darker blue (#2158d8), so the ink flips: white
+   on it measures 6.1:1 where the near-black above would be 3.2:1 and fail.
+   `selected` does not move between themes, so the active state keeps dark ink. */
+:root[data-theme="light"] .swapdoor-cluster {
+  --cluster-ink: #ffffff;
+}
+:root[data-theme="light"] .swapdoor-cluster--active {
+  --cluster-ink: #0b0f1a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swapdoor-cluster__disc {
+    transition: none;
+  }
+  .swapdoor-cluster--active .swapdoor-cluster__disc {
+    transform: none;
+  }
+  /* The plugin's own zoom-in / zoom-out and spiderfy animations, from its
+     MarkerCluster.css. Motion is the point of them, so there is nothing to keep
+     for a visitor who has asked for less of it — the markers still arrive, they
+     just arrive. */
+  .leaflet-cluster-anim .leaflet-marker-icon,
+  .leaflet-cluster-anim .leaflet-marker-shadow,
+  .leaflet-cluster-spider-leg {
+    transition: none;
   }
 }
 
@@ -730,19 +857,11 @@ input.range-brand:focus-visible::-moz-range-thumb {
     display: none;
   }
 
-  /* Leaflet ships `.leaflet-container { background: #ddd }` in its own
-     stylesheet, which is injected AFTER globals.css and therefore beats the
-     token rule near the top of this file. On a wide screen it never shows: the
-     fitted world is taller than the box. On a portrait phone it is the opposite
-     — the world occupies about a third of the container and the rest is two
-     light-grey bands across a dark page, the single highest-contrast thing in
-     the section and it means nothing (Lecture 5: contrast must mark what
-     matters). Doubling the class outranks Leaflet's single one without
-     `!important`, and `surface-2` is exactly the colour the map's own section
-     is painted, so the bands stop existing rather than merely darkening. */
-  .leaflet-container.leaflet-container {
-    background: var(--color-surface-2);
-  }
+  /* The Leaflet container's own background used to be corrected here, at this
+     breakpoint only. It now lives with the rest of the map styling near the
+     top of this file, unscoped — Explore's tall sticky map showed the same
+     light-grey bands on a desktop, which is what the mobile-only scoping had
+     assumed could not happen. See the note there. */
 
   /* Leaflet's own zoom buttons: 30×30 white squares with a black border. Two
      faults on a phone — they are the only white surface left on the site

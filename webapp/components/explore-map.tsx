@@ -5,11 +5,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { House } from "@/lib/houses";
 import { addBasemap } from "@/components/map-basemap";
+import { createClusterGroup, markActiveClusters, openMarkerPopup } from "@/components/map-clusters";
 
 export type MapBounds = { south: number; west: number; north: number; east: number };
 
 // Presentational map for the Explore results. It plots whatever list it's handed
 // (filtering happens in <ExploreView>) and supports:
+//  • clustering — homes at (or near) one point become one numbered mark that
+//    opens on click; see components/map-clusters.ts for why plain markers could
+//    not stay.
 //  • hover-sync — `activeId` highlights a pin; hovering a pin calls `onHoverHouse`.
 //  • "Search this area" — after the user pans/zooms, a button offers to filter to
 //    the visible bounds (manual, so results never change out from under them).
@@ -46,7 +50,7 @@ export default function ExploreMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
+  const markersRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersById = useRef<Map<number, L.Marker>>(new Map());
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [userMoved, setUserMoved] = useState(false);
@@ -90,7 +94,23 @@ export default function ExploreMap({
 
     const unfollowTheme = addBasemap(map);
 
-    markersRef.current = L.layerGroup().addTo(map);
+    const group = createClusterGroup();
+    // Clicking a cluster zooms to its children (or spiderfies them). That is a
+    // move we made, not a frame the user chose, so it must not raise "Search
+    // this area" — they asked to see *those homes*, and filtering to the box
+    // that resulted would only drop the ones just outside it.
+    group.on("clusterclick", () => {
+      programmatic.current = true;
+    });
+    // …except when the click spiderfied instead of zooming, which moves nothing
+    // and so never reaches the `moveend` that clears the flag. Left set, it
+    // would swallow the user's next real pan.
+    group.on("spiderfied", () => {
+      programmatic.current = false;
+    });
+    group.addTo(map);
+
+    markersRef.current = group;
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 120);
 
@@ -113,6 +133,10 @@ export default function ExploreMap({
     markersById.current.clear();
 
     const points: [number, number][] = [];
+    // Built as a batch and handed over in one `addLayers` call: a cluster group
+    // re-buckets on every insert, so adding one at a time is the plugin's own
+    // documented slow path.
+    const batch: L.Marker[] = [];
     mappable.forEach((h) => {
       const marker = L.marker([h.lat!, h.lng!], { icon: pinIcon(false), title: h.name });
       marker.bindPopup(
@@ -126,10 +150,11 @@ export default function ExploreMap({
       marker.on("click", () => setSelectedId(h.id));
       marker.on("mouseover", () => onHoverRef.current?.(h.id));
       marker.on("mouseout", () => onHoverRef.current?.(null));
-      marker.addTo(group);
+      batch.push(marker);
       markersById.current.set(h.id, marker);
       points.push([h.lat!, h.lng!]);
     });
+    group.addLayers(batch);
 
     if (fitKey !== lastFitKey.current) {
       lastFitKey.current = fitKey;
@@ -145,11 +170,22 @@ export default function ExploreMap({
 
   // Highlight the active (hovered) / selected pin — a cheap setIcon, no redraw.
   // Depends on `mappable` too so the icons re-apply after a redraw.
+  //
+  // `markActiveClusters` is the clustered half of the same job: a highlighted
+  // pin that happens to be inside a collapsed cluster is not on the map, so the
+  // mark goes on the cluster instead and hover-sync keeps working for every
+  // home rather than only the ungrouped ones.
   useEffect(() => {
-    markersById.current.forEach((marker, id) =>
-      marker.setIcon(pinIcon(id === activeId || id === selectedId))
-    );
-    if (selectedId != null) markersById.current.get(selectedId)?.openPopup();
+    const group = markersRef.current;
+    const container = containerRef.current;
+    const isActive = (id: number) => id === activeId || id === selectedId;
+
+    markersById.current.forEach((marker, id) => marker.setIcon(pinIcon(isActive(id))));
+    if (group && container) markActiveClusters(container, group, markersById.current, isActive);
+    if (selectedId != null) {
+      const marker = markersById.current.get(selectedId);
+      if (group && marker) openMarkerPopup(group, marker);
+    }
   }, [activeId, selectedId, mappable]);
 
   return (

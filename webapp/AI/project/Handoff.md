@@ -58,7 +58,7 @@ section in this file.
 - **App-wide state:** [profile-context](../../components/profile-context.tsx) (who's signed in, loaded once), [saved-context](../../components/saved-context.tsx) (wishlist ids, loaded once), [swaps-context](../../components/swaps-context.tsx) (the account badge count) — all three providers live in [app/layout.tsx](../../app/layout.tsx).
 - **Controls:** [select](../../components/select.tsx) (the one dropdown — Explore's sort, the listing form's home type, the swap panel's offered home; replaced the last three native `<select>`s, whose OS-drawn menus were the only white surfaces on the site), [suggest-input](../../components/suggest-input.tsx) (the combobox behind Country / City, static or fetched).
 - **Places:** [lib/places.ts](../../lib/places.ts) — Supabase-backed country and city lookup (`searchCountries`, `searchCities`, `searchCitiesGlobal`, `findCountry`), replacing the two hand-typed arrays that used to live there.
-- **Search + map:** [home-search-context](../../components/home-search-context.tsx) (the destination is structured — label + city + country + ISO code — since 2026-08-23), [search-fields](../../components/search-fields.tsx) (the "Where" panel is a real combobox with Near me / Anywhere / Recent / Whole country), [lib/place-filter](../../lib/place-filter.ts) (the one place that decides what a destination matches, shared by Explore and both maps), [lib/recent-places](../../lib/recent-places.ts), [home-hero-map](../../components/home-hero-map.tsx), [map-section](../../components/map-section.tsx) → [home-map](../../components/home-map.tsx), [explore-map](../../components/explore-map.tsx), [house-map](../../components/house-map.tsx).
+- **Search + map:** [home-search-context](../../components/home-search-context.tsx) (the destination is structured — label + city + country + ISO code — since 2026-08-23), [search-fields](../../components/search-fields.tsx) (the "Where" panel is a real combobox with Near me / Anywhere / Recent / Whole country), [lib/place-filter](../../lib/place-filter.ts) (the one place that decides what a destination matches, shared by Explore and both maps), [lib/recent-places](../../lib/recent-places.ts), [home-hero-map](../../components/home-hero-map.tsx), [map-section](../../components/map-section.tsx) → [home-map](../../components/home-map.tsx), [explore-map](../../components/explore-map.tsx), [house-map](../../components/house-map.tsx). Two decisions are shared by every map rather than repeated in each: [map-basemap](../../components/map-basemap.ts) (which tiles, and following the theme) and [map-clusters](../../components/map-clusters.ts) (what happens when several homes stand on one spot — since 2026-08-25, one numbered mark that opens on click, because a listing inherits its city's coordinates and so homes in one city are often on *exactly* the same point).
 - **Listings:** [house-card](../../components/house-card.tsx) (shared by Explore/Trending/My listings), [card-gallery](../../components/card-gallery.tsx), [gallery](../../components/gallery.tsx), [swap-panel](../../components/swap-panel.tsx), [reviews-section](../../components/reviews-section.tsx), [amenity-list](../../components/amenity-list.tsx), [save-button](../../components/save-button.tsx).
 - **Swaps:** [swap-dock-context](../../components/swap-dock-context.tsx) (docks the panel into the nav), [swap-actions](../../components/swap-actions.tsx) (accept / decline / withdraw), [swap-thread](../../components/swap-thread.tsx) (the conversation), data layer [lib/swaps.ts](../../lib/swaps.ts) + client-safe [lib/swap-types.ts](../../lib/swap-types.ts).
 - **Account:** [auth-form](../../components/auth-form.tsx) (+ [welcome-banner](../../components/welcome-banner.tsx), the "your account is ready" strip it redirects into — mounted in [app/layout.tsx](../../app/layout.tsx) inside `<Suspense>`, because sign-up honours `?next=` and so has no fixed destination), [profile-form](../../components/profile-form.tsx), [profile-strength](../../components/profile-strength.tsx), [my-reviews](../../components/my-reviews.tsx), [account-settings](../../components/account-settings.tsx), [listing-form](../../components/listing-form.tsx), [unlist-button](../../components/unlist-button.tsx), [trust-checklist](../../components/trust-checklist.tsx), [review-form](../../components/review-form.tsx) (+ [swap-review](../../components/swap-review.tsx), the accepted-swap entry point); client-safe field constants + the strength calculation in [lib/profile-types.ts](../../lib/profile-types.ts), and the Verified thresholds in [lib/trust.ts](../../lib/trust.ts).
@@ -3808,3 +3808,216 @@ not interchangeable — which is the reason the deprecation exists.
 - **The blog's images are still hotlinked to Unsplash** (unchanged from
   2026-08-23), so they are outside both the warming script's list and the
   content-addressing argument for a 31-day TTL.
+
+---
+
+### The footer mascot was in the paragraph's margin, not in the gap (2026-08-25)
+
+Reported from a screenshot: the watermark sat noticeably left of where it looks
+like it belongs. It was true, and the cause was that it had been positioned
+against a *box* rather than against the *whitespace*. `bottom-0 right-2` inside
+the brand column pinned it to that column's right edge (441px in from the
+container at full width), while the paragraph it stands beside stops at 320px —
+so it read as hanging off the end of the paragraph, with the whole 127px gutter
+still empty to its right.
+
+The channel a reader actually sees runs from where the copy stops (`max-w-xs`,
+a fixed 320px) to where *Browse homes* starts (grid column 7). Centred there,
+the mascot is equidistant from both blocks of text and attaches to neither —
+which is the proximity argument from Lecture 5 applied to a decoration rather
+than to content: an element nearer to one group than the other is read as part
+of that group.
+
+**Solved once, not per breakpoint.** The two edges scale differently — 320px is
+fixed, column 7 moves with the container — so a hardcoded offset would only be
+right at one width. With `W` the grid's content width and `C` the brand
+column's, column 7 starts at `(W-352)/2 + 192`, putting the midpoint at
+`168 + W/4`; a 5-of-12 column gives `W = 2.4C + 44.8`, and substituting leaves
+`0.6C + 179.2`. A percentage on an absolutely-positioned child resolves against
+`C`, so that is literally `left-[calc(60%_+_179px)]` plus `-translate-x-1/2`.
+Checked at 1024 / 1100 / 1200 / 1366 / 1920: the clearance is equal on both
+sides at every one of them (36px at `lg`, 68px at full width).
+
+**The clip had to go.** Reaching that midpoint means overflowing the column by
+~60px, so the `overflow-hidden` wrapper was removed — and with it the reason it
+existed, which was that clipping on the column itself would have cut the top off
+the focus ring of the logo link above. The mascot is now a direct absolutely-
+positioned child carrying `pointer-events-none`; it is still `aria-hidden`
+inside `<MascotGlyph>`, still `opacity-[0.06]`, still dropped below `lg` where
+it would land under the copy instead of beside it. Nothing else moved.
+
+The 2026-08-22 note in this file arguing for a bled-off corner is superseded for
+this element: that reasoning was about a mascot at 7% floating in the middle of
+its *own column*, where it read as an accidental second copy of the logo two
+inches under the real one. In the gutter, at 6%, with equal air on both sides, it
+is doing the opposite job — separating two columns rather than decorating one.
+
+**Verified.** `tsc`, `eslint` over `app/`, `components/`, `lib/`, `scripts/` and
+`next build` all clean. The emitted rule was read back out of the production CSS
+(`.left-[calc(60%_+_179px)]{left:calc(60% + 179px)}`) rather than assumed,
+since an arbitrary `calc()` is exactly the kind of class Tailwind silently drops
+if the underscores are wrong. `/` is still `○ (Static)` and the footer is still a
+Server Component.
+
+**Files:** [footer.tsx](../../components/footer.tsx).
+
+---
+
+### Several homes in one city were one pin, and only one of them was reachable (2026-08-25)
+
+Reported directly: when a city has more than one host, the map shows a single
+pin — which is fine — but clicking it only ever opens **one** of the homes, with
+no way to get at the rest.
+
+**The pin was never "one per city".** Both maps drew one `L.marker` per house
+into a plain `L.layerGroup` ([home-map.tsx](../../components/home-map.tsx),
+[explore-map.tsx](../../components/explore-map.tsx)). Leaflet has no concept of
+two markers occupying one point: it stacks them, and every click lands on
+whichever happens to be on top. The other homes were *on the map* and
+unreachable — the map asserted "one home here" and the truth was three, which is
+a Gulf-of-Evaluation gap of the plainest kind (Lecture 3).
+
+**And zooming could never have fixed it.** A listing that picks its city from
+the Country → City picker inherits that **city's** coordinates
+([listing-form.tsx:226](../../components/listing-form.tsx#L226)). Checked
+against the live database: `cities.Split` is `43.50891 / 16.43915`, and the
+listing *Sunny* sits on exactly that, to seven decimals. Two members who both
+pick Split from the picker do not land 300 m apart — they land on the same
+point, at every zoom level that exists. (The other Split listing, typed
+freehand, went through the geocoder and is ~300 m away; that pair separates
+around zoom 13, which is why the bug *looks* like a near-miss and is not one.)
+
+**Chosen from four options** — a browsable list popup, real clustering, a
+carousel popup, or a pin that drives the results list — the user picked
+**clustering with spiderfy**, on **both** maps.
+
+**The fix.** [components/map-clusters.ts](../../components/map-clusters.ts) —
+the sibling of [map-basemap.ts](../../components/map-basemap.ts), and there for
+the same reason: the home map and the Explore map have to answer "what happens
+when homes share a spot" identically, or one pin means two things on two screens
+(Nielsen #2). It exports `createClusterGroup()` — a drop-in for the
+`L.layerGroup()` each map used to build, since a `MarkerClusterGroup` is a
+`FeatureGroup` and the existing `clearLayers()` + redraw effects keep working —
+plus two helpers described below. Dependency: `leaflet.markercluster@1.5.3`.
+
+Homes at or near one point become **one numbered mark**. One click either fits
+the map to the group, or — when the children cannot be separated by zooming,
+which is exactly the identical-coordinates case — **fans them out on legs**.
+Either way it is one click, not twelve.
+
+Three of the options are load-bearing and are commented as such in the file:
+
+- **`spiderfyOnMaxZoom`** is the entire point, and is stated explicitly even
+  though it is the default, so nobody tidies it away as redundant.
+- **`disableClusteringAtZoom` is deliberately NOT set.** It is the obvious knob
+  to reach for — "show real pins once we're close enough" — and it would
+  silently undo the fix: past that zoom the group stops clustering, and two
+  homes at one coordinate go back to being one stacked pin with no way to
+  spiderfy.
+- **`maxClusterRadius: 55`** rather than the default 80. The pin is 30px wide,
+  so ~35px between two of them already stops them overlapping; 55 keeps a margin
+  without merging genuinely distinct neighbourhoods earlier than it has to.
+
+**Two things that would have broken quietly, and did not.**
+
+- *Hover-sync.* Both maps highlight by swapping a marker's icon, which is
+  invisible for a marker inside a collapsed cluster — so hovering a card on
+  Explore would have rung the card and changed nothing on the map, for exactly
+  the homes the map had decided to group. `markActiveClusters()` carries the
+  mark up to the cluster instead. Same amber, same size step.
+- *"Search this area".* Clicking a cluster zooms, which fires `moveend`, which
+  the Explore map reads as the user framing a view. It is not: they asked to see
+  *those homes*, and filtering to the resulting box would only drop the ones
+  just outside it. A `clusterclick` handler sets the existing `programmatic`
+  ref; a `spiderfied` handler clears it again, because a spiderfy moves nothing
+  and so never reaches the `moveend` that would have consumed the flag.
+
+`openMarkerPopup()` is the third helper, and is deliberately conservative: it
+opens a popup only if the marker is actually on the map. The plugin's
+`zoomToShowLayer()` would zoom or spiderfy until it appeared, and that is what
+must *not* happen — both maps re-run their highlight effect whenever the result
+set changes, so a selection left over from before a filter change would move the
+map out from under the user (Nielsen #4). The cluster gets the highlight
+instead: "in here" rather than "here".
+
+**The mark.** A circle carrying the count, in
+[globals.css](../../app/globals.css). Deliberately not the pin: a pin is a
+teardrop anchored at its tip and marks a point, a cluster is a circle centred on
+its coordinate and marks an area — different things look different (Nielsen #2).
+What ties them together is the brand fill and the same pale stroke (CRAP
+repetition). The count is the signifier and the disc steps up in size with it,
+so both survive a grayscale check and colour is never doing the work alone
+(Lecture 6). The plugin's own `MarkerCluster.Default.css` — whose entire content
+is hardcoded green/yellow/orange fills — is **not imported**; only its
+layout/animation sheet is.
+
+Ink is themed rather than fixed, because the brand moves between themes and the
+two ends want opposite answers: `#0b0f1a` on the dark theme's `#3b82f6` measures
+5.2:1 (white there is 3.7:1 and fails), and white on the light theme's `#2158d8`
+measures 6.1:1 (the near-black there is 3.2:1 and fails).
+
+**Two real bugs found by looking at it on screen rather than reasoning about
+it.** Both were introduced in this pass, both the same shape, and both are why
+the disc is now an inner `__disc` element rather than the marker itself:
+
+1. The count rendered at the top-left, *outside* its disc. Leaflet ships
+   `.leaflet-marker-icon { display: block }` in a stylesheet injected **after**
+   globals.css, and at equal specificity the later rule wins — so the
+   `display: grid` that was meant to centre it never applied.
+2. The hover `transform: scale(1.1)` sat on the marker element, whose
+   `transform` Leaflet writes **inline** as its position. Nothing in a
+   stylesheet beats that. This is the same trap the pin's own comment has warned
+   about since 2026-08-15 ("the animation lives on the inner `<svg>` so it never
+   fights Leaflet's positioning transform"), walked into anyway.
+
+**A pre-existing bug this surfaced.** The first screenshot showed two light-grey
+bands above and below the Explore map. Leaflet's own
+`.leaflet-container { background: #ddd }` beats the token rule near the top of
+globals.css for the same load-order reason as (1) — and that had been diagnosed
+correctly on 2026-08-23, but the correction was scoped to the mobile block, on
+the reasoning that "on a wide screen it never shows: the fitted world is taller
+than the box". True of the home map (520px tall, full width); false the moment
+Explore's map became a sticky half-width column ~790px tall, where at zoom 2 the
+world is wider than tall. The doubled-class rule now lives with the rest of the
+map styling, unscoped, and the mobile copy is gone. Not asked for, but one line,
+the same root cause, and it was the highest-contrast thing on the darkest page
+while marking nothing (Lecture 5).
+
+**Touch.** The smallest disc is 36px, under the 44px floor the 2026-08-23 pass
+set. An invisible `::after` under `@media (pointer: coarse)` overhangs it by 4px
+a side, taking the target to 44 without growing the mark; clicks bubble to the
+marker element, where Leaflet's handler already is, so the size stays in CSS and
+the map needs no runtime branch on pointer type.
+
+**Verified on screen, not asserted.** `tsc`, `eslint` over `app/`,
+`components/`, `lib/`, `scripts/` and `next build` all clean. Driven in headless
+Chrome against a **production** build — the dev server was serving a stale CSS
+chunk, which is how bug (1) above nearly escaped:
+
+| Check | Result |
+|---|---|
+| `/explore` map, dark | clusters `2` + `8` + 5 pins = 15 homes; console clean |
+| `/explore` map, light | white numeral on the darker brand; bands now `surface-2` |
+| `/` home map | clusters `7` + `2` + 6 pins = 15; identical behaviour |
+| Cluster click | `8` → fits to its children (`5` + individual pins); **"Search this area" stayed hidden** |
+| **Three homes on one coordinate** | one `3` mark → one click → **three separately clickable pins, zoom unchanged**; the popup opens the home that used to be buried |
+| Card hover → map | the containing cluster turns amber and grows; clears on mouse-out |
+| 390px phone | 15 homes read as `3` / `10` / `2` instead of 15 crammed pins |
+| Touch target | marker 36px + `::after` −4px = **44px**; tap still opens the cluster |
+
+The identical-coordinates row was run against a standalone harness holding
+`createClusterGroup()`'s exact option object, because reproducing it in the app
+itself would have meant writing junk rows into the live database that the
+deployed site serves.
+
+**Left open.** The Leaflet **popup** is still Leaflet's default white card, with
+hardcoded `#555` / `#2f6fe0` in the HTML string that builds it — the last
+unthemed white surface on the maps, and the same defect
+[select.tsx](../../components/select.tsx) was written to fix for native
+`<select>`. Untouched here because it is a separate change to existing
+behaviour, not part of this one.
+
+**Files:** [map-clusters.ts](../../components/map-clusters.ts) (new),
+[home-map.tsx](../../components/home-map.tsx),
+[explore-map.tsx](../../components/explore-map.tsx),
+[globals.css](../../app/globals.css), `package.json`.

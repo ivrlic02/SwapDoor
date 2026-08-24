@@ -9,6 +9,7 @@ import { isPlaceSet, placeMatches, type PlaceFilter } from "@/lib/place-filter";
 import { buttonClass } from "@/components/button";
 import { LocateIcon } from "@/components/icons";
 import { addBasemap } from "@/components/map-basemap";
+import { createClusterGroup, markActiveClusters, openMarkerPopup } from "@/components/map-clusters";
 
 // Leaflet renders tiles as plain <img> DOM elements (no WebGL), so it displays
 // in every browser/preview — unlike a GL map, which needs WebGL. Tiles are
@@ -17,6 +18,10 @@ import { addBasemap } from "@/components/map-basemap";
 // mode, a black) island. The choice and the theme listener live once in
 // components/map-basemap.ts, shared with the Explore and listing maps
 // (Nielsen #2).
+// Homes sharing a spot are grouped into one numbered mark rather than stacked
+// invisibly on top of each other; that decision, and why zooming alone could
+// never fix it, live once in components/map-clusters.ts — shared with Explore
+// for the same consistency reason as the basemap.
 // Pin is an inline SVG divIcon; fill + selected bounce are driven by CSS (see
 // globals.css) so we can theme with tokens. A selected/searched pin is larger,
 // a different colour, and springs.
@@ -52,7 +57,7 @@ export default function HomeMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
+  const markersRef = useRef<L.MarkerClusterGroup | null>(null);
   const meRef = useRef<L.CircleMarker | null>(null);
   const markersById = useRef<Map<number, L.Marker>>(new Map());
 
@@ -111,7 +116,7 @@ export default function HomeMap({
 
     const unfollowTheme = addBasemap(map);
 
-    markersRef.current = L.layerGroup().addTo(map);
+    markersRef.current = createClusterGroup().addTo(map);
     mapRef.current = map;
 
     // Leaflet needs a nudge when its container starts hidden/animating.
@@ -136,6 +141,10 @@ export default function HomeMap({
     markersById.current.clear();
 
     const points: [number, number][] = [];
+    // One batched `addLayers` rather than N inserts — a cluster group re-buckets
+    // on each one, which is why the plugin documents the bulk call as the path
+    // to use.
+    const batch: L.Marker[] = [];
     filtered.forEach((h) => {
       const marker = L.marker([h.lat!, h.lng!], { icon: pinIcon(false), title: h.name });
       marker.bindPopup(
@@ -147,10 +156,11 @@ export default function HomeMap({
          </div>`
       );
       marker.on("click", () => setSelectedId(h.id));
-      marker.addTo(group);
+      batch.push(marker);
       markersById.current.set(h.id, marker);
       points.push([h.lat!, h.lng!]);
     });
+    group.addLayers(batch);
 
     if (points.length === 1) {
       map.setView(points[0], 6, { animate: true });
@@ -162,11 +172,21 @@ export default function HomeMap({
   // Highlight the selected pin (clicked) and any active search matches: swaps
   // the icon (→ different colour + larger), which replays the bounce, and opens
   // the popup for a clicked pin. Runs on selection/search change — no re-fit.
+  //
+  // Clusters carry the same mark, so a search whose matches got grouped still
+  // reads as "these are your results" instead of leaving the highlight on
+  // whichever homes happened not to be clustered.
   useEffect(() => {
-    markersById.current.forEach((marker, id) => {
-      marker.setIcon(pinIcon(id === selectedId || searchActive));
-    });
-    if (selectedId != null) markersById.current.get(selectedId)?.openPopup();
+    const group = markersRef.current;
+    const container = containerRef.current;
+    const isActive = (id: number) => id === selectedId || searchActive;
+
+    markersById.current.forEach((marker, id) => marker.setIcon(pinIcon(isActive(id))));
+    if (group && container) markActiveClusters(container, group, markersById.current, isActive);
+    if (selectedId != null) {
+      const marker = markersById.current.get(selectedId);
+      if (group && marker) openMarkerPopup(group, marker);
+    }
   }, [filtered, selectedId, searchActive]);
 
   function locateMe() {

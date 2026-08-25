@@ -11,14 +11,14 @@ SwapDoor is a Next.js-based community platform for **home exchange** (house swap
 # 📂 Assignment Overview
 
 ## 1. Idea Pitch
-- 🔗 Link to Assignment 1: [**Idea Pitch**](https://youtu.be/juhnkCSr0zo)
+- 🔗 Link to Assignment 1: [**Idea Pitch**](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Idea%20Pitch)
 
 - Define the topic of the web application
 - Clearly describe the problem it aims to solve
 - Define who the targeted users are and how they would benefit from using this application
 
 ## 2. User personas and information architecture
-- 🔗 Link to Assignment 2: [**User Personas**](/assignments/user-personas/)
+- 🔗 Link to Assignment 2: [**User Personas**](https://github.com/ivrlic02/SwapDoor/blob/main/assignments/User%20personas%20and%20information%20architecture)
 
 - Three well-defined user personas: **Alex Chen** (digital nomad, driven by cost and practicality), **Sarah Miller** (cautious family planner, driven by trust and safety), and **Mateo & Elena Ruiz** (retired explorers, driven by simplicity and authenticity)
 - Detailed descriptions of each persona's objectives, motivations, and challenges when using the platform
@@ -35,14 +35,14 @@ SwapDoor is a Next.js-based community platform for **home exchange** (house swap
 - Deploy the initial version of the application to Vercel and verify it is publicly accessible
 
 ## 4. Low/High-fidelity prototype
-- 🔗 Link to Assignment 4: [**Low/High-fidelity prototype**](/assignments/low-high-fidelity-prototype)
+- 🔗 Link to Assignment 4: [**Low/High-fidelity prototype**](https://github.com/ivrlic02/SwapDoor/tree/main/assignments/Low%20High-fidelity%20prototype)
 
 - High-fidelity desktop homepage prototype demonstrating the visual style, layout, and content hierarchy
 - High-fidelity mobile homepage prototype adapted for smaller screens and touch interaction
 - Visual foundation for implementing the Next.js interface, ensuring consistency between design and the built application
 
 ## 5. Next.js - Dynamic routes, data fetching
-- 🔗 Link to Assignment 5: [**Next.js - Dynamic routes, data fetching**](https://swap-door.vercel.app/)
+- 🔗 Link to Assignment 5: [**Next.js - Dynamic routes, data fetching**](https://swap-door.vercel.app/explore)
 
 - Dynamic routing implementation (`/explore/[id]`, `/blog/[slug]`, `/swaps/[id]`, `/my-listings/[id]/edit`)
 - Data fetching and state management from a remote database

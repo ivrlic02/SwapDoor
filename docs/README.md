@@ -177,7 +177,7 @@ Audited with Lighthouse 12.8.2 against the live deployment:
 | | Performance | Accessibility | Best Practices | SEO |
 |---|---|---|---|---|
 | **Desktop** | 100 | 92 | 100 | 92 |
-| **Mobile** | 83 | 92 | 100 | 92 |
+| **Mobile** | 93 | 92 | 100 | 92 |
 
 Cumulative Layout Shift is **0** on both form factors and server response time is **30 ms**. The mobile LCP of 2.9 s is a simulated-throttling artifact — the LCP element is the server-rendered hero heading, observed on screen at 642 ms.
 

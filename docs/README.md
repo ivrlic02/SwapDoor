@@ -181,12 +181,4 @@ Audited with Lighthouse 12.8.2 against the live deployment:
 
 Cumulative Layout Shift is **0** on both form factors and server response time is **30 ms**. The mobile LCP of 2.9 s is a simulated-throttling artifact — the LCP element is the server-rendered hero heading, observed on screen at 642 ms.
 
-# 📝 Future improvements
-
-- Points/credit system for non-simultaneous swaps
-- Multi-Language Support
-- Push Notifications & Emails
-- Identity verification for hosts
-- Personalized recommendations
-
 # ✅ App available [here](https://swap-door.vercel.app/)

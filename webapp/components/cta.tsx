@@ -49,7 +49,10 @@ export function CTA() {
       primary: { href: "/sign-in?mode=sign-up", label: "Get started free" },
       secondary: onHowItWorks
         ? { href: "/explore", label: "Browse homes" }
-        : { href: "/how-it-works", label: "Learn more" },
+        // Not "Learn more": non-descriptive link text is both an SEO fault and
+        // an accessibility one — a screen reader tabbing the link list hears the
+        // verb with no object (Lighthouse `link-text`, the page's only failure).
+        : { href: "/how-it-works", label: "See how swapping works" },
     },
     "no-home": {
       title: "You're in. Now open your door.",

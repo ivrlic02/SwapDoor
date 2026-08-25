@@ -244,7 +244,15 @@ function Segment({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      aria-label={value ? `${label}: ${value}` : label}
+      // The name must CONTAIN the visible text, or voice control has nothing to
+      // match on: this said just "Where" while the cell reads "Where / Search
+      // destinations", so "click Search destinations" hit nothing (Lighthouse
+      // `label-content-name-mismatch`, all three cells). Now the name is exactly
+      // what is on screen — and in the compact phone bar, where the label is
+      // `display:none` and only the sub-line shows, it still leads with the
+      // label, which is allowed: the rule wants the visible text contained, not
+      // identical.
+      aria-label={`${label} ${value || placeholder}`}
       className="group flex min-w-0 flex-1 rounded-2xl p-1 text-left sm:rounded-full"
     >
       {/* Inner chip is inset from the cell by the button's p-1, so the active
@@ -292,7 +300,14 @@ function Segment({
               second line to put it on and ~95px per cell will not hold
               "Search destinations" beside a word. */}
           <span className={compact ? "hidden sm:inline" : undefined}>{label}</span>
-        </span>
+        </span>{" "}
+        {/* The space above is not cosmetic. axe concatenates an element's
+            visible text with `join("")`, so with the two spans flush against
+            each other it read this cell as "WhereSearch destinations" — a string
+            no sensible accessible name can contain, which is why the name above
+            still failed the mismatch rule after it was corrected. A whitespace-
+            only text run between two flex items is explicitly not rendered
+            (CSS Flexbox §4), so this changes the audit and nothing else. */}
         {/* Was `text-muted/70` — 4.1:1 on the bar, under the 4.5:1 AA floor for
             text this size, on the very words that tell you the field is fillable.
             Plain `muted` is 6.0:1 on the raised surface. */}

@@ -14,6 +14,12 @@
 export function Stars({ value, className = "" }: { value: number; className?: string }) {
   return (
     <div
+      // `role="img"` is load-bearing, not decoration: `aria-label` is PROHIBITED
+      // on a generic div, so without a role the name below is silently dropped
+      // and a screen reader announces nothing at all for the rating (Lighthouse
+      // `aria-prohibited-attr`, 8 instances on the home page alone). The stars
+      // themselves are aria-hidden, so this label is the only text there is.
+      role="img"
       className={`flex items-center gap-0.5 ${className}`}
       aria-label={`${value.toFixed(1)} out of 5 stars`}
     >

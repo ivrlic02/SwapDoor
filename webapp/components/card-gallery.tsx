@@ -191,10 +191,21 @@ export function CardGallery({
         <>
           <NavButton dir="prev" onClick={step(-1)} />
           <NavButton dir="next" onClick={step(1)} />
-          {/* Each dot is 6px of ink inside a ~28×36px target on touch — the
-              padding is the button, the <span> is the dot. Above `lg` the
-              padding collapses and the geometry is exactly what it was. */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-0.5 pb-2.5 lg:bottom-2 lg:gap-1.5 lg:pb-0">
+          {/* Each dot is 6px of ink centred in a 28×28 target — the button is
+              the target, the <span> is the dot.
+              This used to be `px-2 py-2.5 lg:p-0`, which measured 22×26 on touch
+              and, because the padding collapsed above `lg`, **6×6 on desktop**.
+              Both are under the 24×24 floor of WCAG 2.5.8, and the desktop case
+              failed it by a factor of four. Measured, not estimated: the old
+              comment here claimed "~28×36px" and the arithmetic never supported
+              it (6px dot + 2×8px of `px-2` = 22px).
+              The trap was that the ACTIVE dot is `w-4`, so it measured 32px and
+              passed — the one you point at while testing by hand is always the
+              one that is big enough, which is why this survived several passes.
+              28px at every breakpoint, so the target no longer depends on which
+              dot is current or on how wide the window is. The row is wider above
+              `lg` than it was; that is the honest cost of a real target. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center pb-2.5 lg:pb-0">
             {images.map((_, i) => (
               <button
                 key={i}
@@ -202,7 +213,7 @@ export function CardGallery({
                 onClick={jump(i)}
                 aria-label={`Go to photo ${i + 1}`}
                 aria-current={i === index}
-                className="pointer-events-auto grid place-items-center px-2 py-2.5 lg:p-0"
+                className="pointer-events-auto grid h-7 w-7 place-items-center"
               >
                 <span
                   className={`block h-1.5 rounded-full transition-all ${

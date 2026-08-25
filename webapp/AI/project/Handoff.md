@@ -184,7 +184,7 @@ Supabase satisfies "remote headless CMS" for the blog and listings. If the rubri
 | Search / filter of listings | ✅ Done | Interactive home map **+** structured filters on `/explore` (destination search, guests, max-price slider, available-from date, sort) with live count, empty state, and shareable URL params. Hero search now feeds straight into these filters |
 | User login for private content | ✅ Live | Supabase Auth connected + verified, and since **2026-08-24** signing up lands you *inside* the gate rather than on a form telling you to go and read an email that is never sent. The private area is six real gated routes, not an empty gate: `/dashboard` (wishlist), `/profile` (+ account settings), `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home` — which **writes** to the CMS as the signed-in host — and `/swaps` (+ `/swaps/[id]`), the request inbox and its conversation |
 | Public blog (images + video + code) | ✅ Done | `/blog` + `/blog/[slug]`, **5 posts across 4 categories**, served from Supabase. The narrowed "images only" scope was reopened on 2026-08-22: the block model made video and code snippets nearly free, so the brief is now met literally |
-| Content in a remote headless CMS | ✅ Live | Listings (`houses`), **blog posts (`blog_posts`) and the whole How-it-Works page (`site_content`)**, all in Supabase behind RLS. The admin surface is no longer the Supabase Table Editor but a real editor at `/admin` — see the dated section at the end (2026-08-22) |
+| Content in a remote headless CMS | ✅ Live | Listings (`houses`), **blog posts (`blog_posts`) and the whole How-it-Works page (`site_content`)**, all in Supabase behind RLS. Genuinely served from the database since **2026-08-25** — until then the tables were empty and the pages were rendering the repo's JSON fallback, which looks identical (see the last dated section). The admin surface is a real editor at `/admin`, not the Supabase Table Editor. ⚠️ **One step outstanding: no account has `role = 'admin'`, so `/admin` 404s for everyone** — do this before the demo |
 | Deploy to cloud (Vercel/Netlify) | ✅ Live | **https://swap-door.vercel.app** since **2026-08-24**. Vercel project `ivrlic02s-projects/swap-door`, root directory `webapp/`, auto-deploys from `main`. The two `NEXT_PUBLIC_SUPABASE_*` vars are set for **Production + Development**; **Preview is still empty**, so a branch deploy would still fail. See the last dated section |
 | Usability evaluation | ❌ Missing | Short test with 2–3 users against the personas; write up |
 | PageSpeed Insights audit | ⚠️ Ready to run | `next/image` + polish done. **Nothing blocks it any more** — run it against `https://swap-door.vercel.app` and screenshot the results |
@@ -2471,13 +2471,11 @@ and the new FAQ. `/admin` signed-out returns **307 → `/sign-in?next=%2Fadmin`*
 
 #### Left open
 
-- **The database still has to be seeded.** `supabase/cms.sql` is applied, but the
-  content write and the admin promotion were blocked by this environment's write
-  guard, so `blog_posts` and `site_content` are still empty and the site is
-  running on the JSON fallback. Two SQL runs finish it — `supabase/seed-cms.sql`,
-  and one `update public.profiles set role = 'admin'`. `/admin` says so on screen
-  until then, because "I edited a post and nothing changed" is otherwise an hour
-  of looking for a bug that is not there.
+- ~~**The database still has to be seeded.**~~ ✅ **Done 2026-08-25** — the 5 posts
+  and the 4 How-it-Works sections are in `blog_posts` / `site_content`, and `/blog`
+  is verifiably served from the database. **The admin promotion is still open**,
+  and the statement this note gave for it turned out not to work; see the last
+  dated section in this file for both.
 - **Image uploads.** Cover images and in-post images are URL fields. The
   `house-photos` Storage bucket and the upload helper in
   [lib/storage.ts](../../lib/storage.ts) already exist, so wiring a real uploader
@@ -2732,15 +2730,15 @@ shared link, so this was visible outside the site too.
 
 #### Still open, and not touched here
 
-**`public.blog_posts` is empty.** `supabase/cms.sql` was applied (the table
-exists) but **`supabase/seed-cms.sql` was never run**, so `/blog` has been
-serving the committed fallback in `lib/cms-seed.json` this whole time. It
-renders identically, which is why nothing looked wrong — but the "content in a
-remote headless CMS" requirement is currently satisfied by a file in the repo,
-not by the database, and `/admin` shows no posts to edit. One paste of the
-regenerated `supabase/seed-cms.sql` into the SQL editor fixes it; it upserts on
-`slug`, so it is safe to run more than once. The same applies to
-`site_content` for `/how-it-works` — check it before the demo.
+**`public.blog_posts` is empty.** ✅ **Fixed 2026-08-25** — see the last dated
+section. The finding stands as written, and is worth keeping for the report:
+`supabase/cms.sql` was applied (the table existed) but **`supabase/seed-cms.sql`
+was never run**, so `/blog` served the committed fallback in `lib/cms-seed.json`
+for three days. It rendered identically, which is exactly why nothing looked
+wrong — and it meant the "content in a remote headless CMS" requirement was
+being satisfied by a file in the repo rather than by the database. A fallback
+good enough to be invisible is also good enough to hide that the system behind
+it was never switched on.
 
 `tsc`, `eslint` and `next build` clean; all five posts still prerender.
 
@@ -3079,13 +3077,11 @@ it before the demo.
   site. The script's shape would extend to them cheaply. The `/admin` block
   editor's image fields are still URL boxes rather than uploaders, which is the
   related gap recorded on 2026-08-22.
-- **`blog_posts` and `site_content` are still empty** (0 rows) — unchanged from
-  the 2026-08-23 note above. `supabase/seed-cms.sql` has never been run, so
-  `/blog` and `/how-it-works` are still serving the committed JSON fallback and
-  `/admin` has nothing to edit. Also **nobody is an admin yet**: `profiles.role`
-  is `member` for all 8 accounts, the owner's included, so `/admin` is currently
-  unreachable by anyone. Both are one SQL run each and both want doing before the
-  demo.
+- ~~**`blog_posts` and `site_content` are still empty**~~ ✅ **Seeded 2026-08-25**
+  (5 posts, 4 sections, verified against the source by hash). **Nobody is an admin
+  yet** remains true — `profiles.role` is `member` for all 11 profiles, so `/admin`
+  is still unreachable by anyone. That one is *not* the single `update` this note
+  assumed; see the last dated section.
 - **`schema.sql` / `seed-images.sql` still carry Unsplash URLs, on purpose.** A
   fresh project has empty buckets and needs something to bootstrap from; the
   script is the second step, and a note at the top of `seed-images.sql` now says
@@ -4021,3 +4017,122 @@ behaviour, not part of this one.
 [home-map.tsx](../../components/home-map.tsx),
 [explore-map.tsx](../../components/explore-map.tsx),
 [globals.css](../../app/globals.css), `package.json`.
+
+### The CMS was finally switched on, and the admin recipe turned out to be wrong (2026-08-25)
+
+For three days this file recorded "content in a remote headless CMS" as ✅ Live
+while `blog_posts` and `site_content` held **zero rows**. Both tables existed —
+`supabase/cms.sql` had been applied — but `supabase/seed-cms.sql` had never been
+run, so `/blog` and `/how-it-works` were rendering the committed fallback in
+[lib/cms-seed.json](../../lib/cms-seed.json) the whole time.
+
+**Why nobody noticed is the interesting part.** The fallback and the seed are
+generated from the same JSON by design, precisely so they cannot disagree — so
+the pages rendered *identically* whether the database was serving them or not.
+The safety net was good enough to be invisible, which also made it good enough
+to hide that the system behind it had never been switched on. Three separate
+notes in this file had spotted it (2026-08-22, -23, -24) and each one recorded it
+as a one-paste job for later. It is worth naming in the report: a fallback this
+seamless needs a positive check that it is *not* being used, which is what
+`isBlogSeeded()` in [lib/cms.ts](../../lib/cms.ts) already computes for the
+`/admin` banner — nothing outside `/admin` ever asked it.
+
+#### What was written
+
+The five posts and the four How-it-Works sections, applied statement by
+statement against the live project.
+
+**Verified by hash, not by eye.** Because the SQL was applied a statement at a
+time rather than as one file paste, "did anything get mangled on the way in" is a
+real question and reading it back is not an answer. Postgres stores `jsonb` in a
+canonical form — object keys ordered by byte length then bytewise, members and
+array elements both joined with `", "` — so the same canonical form can be
+recomputed from `cms-seed.json` in Node and hashed. `md5(content::text)` from the
+database against that recomputed hash: **9 of 9 identical**, five posts and four
+sections. Block counts match too (15 / 14 / 13 / 9 / 13).
+
+*(The first run of that check reported 8 mismatches, and the defect was in the
+checker: it joined array elements with a bare comma. `how_it_works.intro` — the
+one value with no arrays in it — matched, which is what pointed at the
+serialiser rather than at the data.)*
+
+**Confirmed the live site actually switched over**, which the identical rendering
+otherwise hides. The tell is the byline: the fallback builds `author: { name }`
+and nothing else ([cms-defaults.ts](../../lib/cms-defaults.ts)), while the
+database path joins `profiles` and picks up `avatar_url`. On
+**https://swap-door.vercel.app/blog** three distinct host portraits now render
+out of the `avatars` bucket — Sarah Miller, Kenji Tanaka, Alex Chen — which can
+only come from `blog_posts.author_id`. The two posts bylined "The SwapDoor Team"
+correctly show none, since they carry a name and a null `author_id`. All five
+posts list, all five `/blog/<slug>` pages 200, `/how-it-works` still emits its
+four step anchors, and the course's media requirement is served from the database
+rather than from a file: the pitch video (`juhnkCSr0zo`, still click-to-load via
+its `ytimg` poster) and the `is_verified_host` SQL snippet both render.
+
+`/blog` is `ƒ`, so it changed on the next request; `/blog/[slug]` and
+`/how-it-works` are ISR at 60s and picked it up one request later.
+
+#### The admin promotion is still open — and the documented statement does not work
+
+This is a real defect in the project's own setup guide, not just an unfinished
+step. [Supabase-Setup.md](./Supabase-Setup.md) §6.3 and the 2026-08-22 note both
+say to run:
+
+```sql
+update public.profiles set role = 'admin' where id = (…);
+```
+
+That statement **fails**. `profiles_guard_role` — the trigger `cms.sql` added
+specifically to stop a member promoting themselves — refuses any change to `role`
+unless `public.is_admin()` is true, and `is_admin()` resolves `auth.uid()`, which
+is **NULL in the SQL Editor** because that is a database session and not a
+signed-in request. Measured on this project: `select public.is_admin()` returns
+`false` there and `pg_trigger.tgenabled` is `'O'`.
+
+So the guard fires for the one person who legitimately has to bypass it, and by
+construction **the first admin cannot be created by the documented statement** —
+there is no admin yet, which is exactly the condition the guard reads as "refuse".
+A guard whose bootstrap case is impossible is a chicken-and-egg bug, and it was
+sitting behind a note that read like a formality. It is also a plausible
+re-reading of the 2026-08-22 line blaming "this environment's write guard": the
+block may well have been this trigger all along.
+
+The working recipe, now in §6.3, disables the guard for the length of the
+statement and re-arms it in the same run:
+
+```sql
+alter table public.profiles disable trigger profiles_guard_role;
+
+update public.profiles
+set role = 'admin'
+where id = (select id from auth.users where email = 'you@example.com');
+
+alter table public.profiles enable trigger profiles_guard_role;
+
+-- then confirm it is armed again; this matters more than the update
+select tgenabled from pg_trigger where tgname = 'profiles_guard_role';  -- 'O'
+```
+
+**Not run here.** Granting a role on an `auth`-linked table is a privilege
+escalation, and this session's tooling refuses it — correctly. It is one paste in
+the Supabase SQL Editor, then sign out and back in, and **Edit content** appears
+in the account menu. Until then `/admin` answers 404 to everyone, including the
+owner, so **the editor — the part of the CMS that is actually the deliverable in
+a user-interfaces course — cannot be demonstrated.** Do it before the demo.
+
+#### Left open
+
+- **The admin promotion above.** The only thing between here and a demonstrable CMS.
+- **Blog images are still hotlinked** to `images.unsplash.com` — 15 or so URLs now
+  live in the database rather than only in the repo, so the earlier note's fix
+  ([scripts/seed-storage-media.mjs](../../scripts/seed-storage-media.mjs) extended
+  to cover them) is unchanged in shape but now has rows to rewrite.
+- **`/admin` image fields are still URL boxes**, not uploaders — unchanged from
+  2026-08-22.
+- **The four junk test rows** (ids 104, 107, 110, 111) are still on Explore, and
+  `houses` now reads 15 rather than 14. Still one `delete` away, still a data call.
+
+**Files:** [AI/project/Supabase-Setup.md](./Supabase-Setup.md) §6 and §6.3
+rewritten; this file's §5 checklist row and the three stale "still empty" notes
+corrected. No application code changed — the code was right, the database was
+empty.

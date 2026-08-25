@@ -110,6 +110,12 @@ and listing photos have nowhere to upload to.
 
 ## 6. The CMS (added 2026-08-22)
 
+> **Status on this project (2026-08-25):** 6.1 and **6.2 are done** — `blog_posts`
+> holds the 5 published posts and `site_content` the 4 How-it-Works sections, and
+> `/blog` on the live site is verifiably served from the database rather than the
+> fallback. **6.3 is still open: there is no admin**, so `/admin` 404s for
+> everyone. See the dated section at the end of Handoff.md.
+
 Two more SQL files, and one row to flip. Until these are run, `/blog` and
 `/how-it-works` still render — they fall back to the content committed in
 `lib/cms-seed.json` — but nothing you type in `/admin` will show on the site,
@@ -136,12 +142,35 @@ and `/admin` will tell you so in an amber banner.
 
 ### 6.3 Make yourself an admin
 Nobody is an admin by default, and the guard trigger means you cannot grant it
-from the app. Run this once in the SQL Editor:
+from the app.
+
+**The plain `update` does not work, and it is worth knowing why.**
+`profiles_guard_role` refuses any change to `role` unless `public.is_admin()` is
+true — and `is_admin()` reads `auth.uid()`, which is **NULL in the SQL Editor**
+(it is a database session, not a signed-in request). So the guard fires for the
+one person who legitimately needs to bypass it, and the first admin can never be
+created by the statement this section used to give. Measured on this project:
+`select public.is_admin()` returns `false` there, and the trigger is enabled.
+
+Disable the guard for the length of the statement, then put it straight back:
 
 ```sql
+alter table public.profiles disable trigger profiles_guard_role;
+
 update public.profiles
 set role = 'admin'
 where id = (select id from auth.users where email = 'you@example.com');
+
+alter table public.profiles enable trigger profiles_guard_role;
+```
+
+Run all three together, so the guard is never off across two round trips. Then
+confirm it is armed again — this matters more than the update itself, because a
+disabled guard is the privilege-escalation hole `cms.sql` exists to close:
+
+```sql
+select tgenabled from pg_trigger where tgname = 'profiles_guard_role';
+-- must return 'O'
 ```
 
 Then sign out and back in (the role is read when your profile loads), and

@@ -140,7 +140,16 @@ The final web application must:
 > maintained version of this list — §1 for what exists, "What's left to do" for
 > what doesn't.
 
-- [x] Confirm/integrate headless CMS for content storage — **Supabase**. Listings, profiles, reviews and wishlist since 2026-08-17; **blog posts (`blog_posts`) and the whole How-it-Works page (`site_content`) since 2026-08-22**, with a purpose-built editor at `/admin` (admin-only via `profiles.role` + RLS) rather than the Supabase Table Editor
+- [x] Confirm/integrate headless CMS for content storage — **Supabase**. Listings,
+  profiles, reviews and wishlist since 2026-08-17; **blog posts (`blog_posts`) and
+  the whole How-it-Works page (`site_content`)** built 2026-08-22 and **actually
+  serving from the database since 2026-08-25** — the tables sat empty until then
+  and the pages rendered the repo's JSON fallback, which looks identical. A
+  purpose-built editor lives at `/admin` (admin-only via `profiles.role` + RLS)
+  rather than the Supabase Table Editor. ⚠️ **One step left: no account has
+  `role = 'admin'` yet, so `/admin` 404s for everyone** — the documented `update`
+  for it does not work (the guard trigger blocks its own bootstrap); the working
+  version is in [Supabase-Setup.md](./Supabase-Setup.md) §6.3
 - [x] Implement user authentication (login-gated private content) — Supabase Auth; six gated routes (`/dashboard`, `/profile`, `/my-listings`, `/my-listings/[id]/edit`, `/list-your-home`, `/swaps`)
 - [x] Build out search/filter functionality for swap listings — destination/dates/guests + type, amenities, rating, verified, budget; List/Map toggle; URL-synced
 - [x] Build public blog section with mixed media content — `/blog` + `/blog/[slug]`, **5 posts across 4 categories**, rendering ten block types including **video (the project's own pitch film) and code snippets**. The earlier narrowing to images-only was reopened on 2026-08-22: a block-model CMS made the other two nearly free, so the brief is met literally

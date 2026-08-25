@@ -44,3 +44,9 @@ supabase/seed-places.sql
 sync-to-github.ps1
 
 .vercel
+
+# AI dokumentacija i agent konfiguracija (lokalno, ne ide u repo)
+/AI/
+AGENTS.md
+CLAUDE.md
+imSDSADADage.png
